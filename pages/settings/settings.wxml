@@ -1,0 +1,85 @@
+<view class="container">
+  <!-- 启动流程配置 -->
+  <view class="section">
+    <view class="section-title">启动流程清单</view>
+    <view class="config-items">
+      <view class="config-item" wx:for="{{ startChecklist }}" wx:key="id" wx:for-index="idx">
+        <input class="config-input" value="{{ item.text }}" bindinput="onStartInput" data-id="{{ item.id }}" placeholder="输入内容" />
+        <button class="btn-delete" bindtap="deleteStart" data-id="{{ item.id }}">删除</button>
+      </view>
+    </view>
+    <button class="btn-default" bindtap="addStart">新增一项</button>
+  </view>
+
+  <!-- 模板A配置 -->
+  <view class="section">
+    <view class="section-title">模板A配置</view>
+    <view class="threshold-input-group">
+      <text class="threshold-label">完成阈值：</text>
+      <input class="threshold-input" type="number" value="{{ templateA.threshold }}" bindinput="onThresholdInput" data-template="A" />
+      <text class="threshold-unit">项</text>
+    </view>
+    <view class="config-items">
+      <view class="config-item" wx:for="{{ templateA.items }}" wx:key="id">
+        <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="A" data-id="{{ item.id }}" placeholder="输入内容" />
+        <button class="btn-delete" bindtap="deleteTemplateItem" data-template="A" data-id="{{ item.id }}">删除</button>
+      </view>
+    </view>
+    <button class="btn-default" bindtap="addTemplateItem" data-template="A">新增一项</button>
+  </view>
+
+  <!-- 模板B配置 -->
+  <view class="section">
+    <view class="section-title">模板B配置</view>
+    <view class="threshold-input-group">
+      <text class="threshold-label">完成阈值：</text>
+      <input class="threshold-input" type="number" value="{{ templateB.threshold }}" bindinput="onThresholdInput" data-template="B" />
+      <text class="threshold-unit">项</text>
+    </view>
+    <view class="config-items">
+      <view class="config-item" wx:for="{{ templateB.items }}" wx:key="id">
+        <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="B" data-id="{{ item.id }}" placeholder="输入内容" />
+        <button class="btn-delete" bindtap="deleteTemplateItem" data-template="B" data-id="{{ item.id }}">删除</button>
+      </view>
+    </view>
+    <button class="btn-default" bindtap="addTemplateItem" data-template="B">新增一项</button>
+  </view>
+
+  <!-- 模板C配置 -->
+  <view class="section">
+    <view class="section-title">模板C配置</view>
+    <view class="threshold-input-group">
+      <text class="threshold-label">完成阈值：</text>
+      <input class="threshold-input" type="number" value="{{ templateC.threshold }}" bindinput="onThresholdInput" data-template="C" />
+      <text class="threshold-unit">项</text>
+    </view>
+    <view class="config-items">
+      <view class="config-item" wx:for="{{ templateC.items }}" wx:key="id">
+        <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="C" data-id="{{ item.id }}" placeholder="输入内容" />
+        <button class="btn-delete" bindtap="deleteTemplateItem" data-template="C" data-id="{{ item.id }}">删除</button>
+      </view>
+    </view>
+    <button class="btn-default" bindtap="addTemplateItem" data-template="C">新增一项</button>
+  </view>
+
+  <!-- 提醒设置 -->
+  <view class="section">
+    <view class="section-title">提醒设置</view>
+    <view class="reminder-row">
+      <text class="reminder-label">开启提醒</text>
+      <switch checked="{{ reminderEnabled }}" bindchange="onReminderSwitch" />
+    </view>
+    <view class="reminder-row">
+      <text class="reminder-label">提醒时间</text>
+      <picker mode="time" value="{{ reminderTime }}" bindchange="onTimeChange">
+        <view class="time-picker">{{ reminderTime }}</view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="section">
+    <button class="btn-primary" bindtap="saveConfig">保存配置</button>
+    <button class="btn-danger" bindtap="resetConfig">恢复默认</button>
+  </view>
+</view>

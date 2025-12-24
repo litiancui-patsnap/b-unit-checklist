@@ -1,0 +1,24 @@
+.export-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.option-label {
+  font-size: 14px;
+  color: #333;
+}
+
+.export-textarea {
+  width: 100%;
+  min-height: 400px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  background-color: #fafafa;
+  color: #333;
+  font-family: 'Courier New', Courier, monospace;
+}

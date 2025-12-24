@@ -1,0 +1,22 @@
+<view class="container">
+  <!-- 导出选项 -->
+  <view class="section">
+    <view class="section-title">导出选项</view>
+    <view class="export-option">
+      <text class="option-label">仅导出完成日</text>
+      <switch checked="{{ onlyCompleted }}" bindchange="onOnlyCompletedChange" />
+    </view>
+  </view>
+
+  <!-- 导出文本 -->
+  <view class="section">
+    <view class="section-title">最近30天记录</view>
+    <textarea class="export-textarea" value="{{ exportText }}" disabled auto-height />
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="section">
+    <button class="btn-primary" bindtap="copyText">一键复制</button>
+    <button class="btn-default" bindtap="refreshExport">刷新数据</button>
+  </view>
+</view>

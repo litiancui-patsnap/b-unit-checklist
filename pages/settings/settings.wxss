@@ -1,0 +1,89 @@
+.config-items {
+  margin-bottom: 10px;
+}
+
+.config-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.config-input {
+  flex: 1;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background-color: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.config-input:focus {
+  border-color: #1AAD19;
+  background-color: #fff;
+}
+
+.btn-delete {
+  background-color: #ff4d4f;
+  color: #fff;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  opacity: 0.85;
+}
+
+.btn-delete::after {
+  border: none;
+}
+
+.threshold-input-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.threshold-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.threshold-input {
+  width: 60px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  margin: 0 5px;
+  text-align: center;
+}
+
+.threshold-unit {
+  font-size: 14px;
+  color: #666;
+}
+
+.reminder-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.reminder-row:last-child {
+  border-bottom: none;
+}
+
+.reminder-label {
+  font-size: 14px;
+  color: #333;
+}
+
+.time-picker {
+  font-size: 14px;
+  color: #1AAD19;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
