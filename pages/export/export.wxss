@@ -1,24 +1,121 @@
+/* 使用说明 */
+.instruction-section {
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+  border-left: 4px solid #1AAD19;
+}
+
+.instruction-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.instruction-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.instruction-text {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.8;
+}
+
+/* 导出选项 */
 .export-option {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
+  padding: 12px 0;
+}
+
+.option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .option-label {
-  font-size: 14px;
+  font-size: 15px;
   color: #333;
+  font-weight: 500;
 }
 
+.option-desc {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 记录统计 */
+.record-stats {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+}
+
+.stats-text {
+  font-size: 13px;
+  color: #666;
+}
+
+/* 导出文本框 */
 .export-textarea {
   width: 100%;
   min-height: 400px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.8;
   background-color: #fafafa;
   color: #333;
   font-family: 'Courier New', Courier, monospace;
+  box-sizing: border-box;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 20px;
+}
+
+.btn-large {
+  padding: 16px 24px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary {
+  background-color: #fff;
+  color: #666;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 14px 24px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary::after {
+  border: none;
+}
+
+.btn-icon {
+  font-size: 18px;
+}
+
+.btn-text {
+  font-size: 15px;
 }

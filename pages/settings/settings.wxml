@@ -77,6 +77,178 @@
     </view>
   </view>
 
+  <!-- 备考方法指引 -->
+  <view class="section">
+    <view class="section-title collapsible" bindtap="toggleMethodGuide">
+      📚 备考方法指引（持续更新）<text class="toggle-icon">{{ showMethodGuide ? '▼' : '▶' }}</text>
+    </view>
+
+    <view class="method-guide" wx:if="{{ showMethodGuide }}">
+      <!-- 核心原则 -->
+      <view class="guide-section">
+        <view class="guide-section-title">核心原则（必读）</view>
+        <view class="principle-box">
+          <text class="principle-text">✅ 执行70% > 完美100%</text>
+          <text class="principle-text">✅ 坚持90天 > 临时突击</text>
+          <text class="principle-text">✅ 不允许0天 > 偶尔懈怠</text>
+          <text class="principle-highlight">每天做完最小任务，你就赢了</text>
+        </view>
+      </view>
+
+      <!-- 每日最小任务 -->
+      <view class="guide-section">
+        <view class="guide-section-title">一、每日最小任务（雷打不动）</view>
+
+        <view class="guide-item">
+          <view class="guide-title">⏰ 工作日（60分钟）</view>
+          <view class="guide-content">
+            <text class="guide-text">• 行测刷题：20题（逻辑判断或资料分析优先）</text>
+            <text class="guide-text">• 综合应用：1题（列框架或仿写答案）</text>
+            <text class="guide-highlight">再忙也要完成，不允许0天</text>
+          </view>
+        </view>
+
+        <view class="guide-item">
+          <view class="guide-title">📅 周末（2-3小时）</view>
+          <view class="guide-content">
+            <text class="guide-text">• 行测套题：1套完整试卷</text>
+            <text class="guide-text">• 综合应用：1套完整试卷</text>
+            <text class="guide-highlight">用于找感觉和查漏补缺</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 模块优先级 -->
+      <view class="guide-section">
+        <view class="guide-section-title">二、行测模块优先级</view>
+
+        <view class="priority-list">
+          <view class="priority-item">
+            <text class="priority-label">逻辑判断</text>
+            <text class="priority-percent">40%</text>
+            <text class="priority-task">每周60题</text>
+          </view>
+          <view class="priority-item">
+            <text class="priority-label">资料分析</text>
+            <text class="priority-percent">30%</text>
+            <text class="priority-task">每周30题</text>
+          </view>
+          <view class="priority-item">
+            <text class="priority-label">言语理解</text>
+            <text class="priority-percent">20%</text>
+            <text class="priority-task">每周15题</text>
+          </view>
+          <view class="priority-item">
+            <text class="priority-label">数量关系</text>
+            <text class="priority-percent">10%</text>
+            <text class="priority-task">可放弃</text>
+          </view>
+        </view>
+
+        <view class="guide-highlight-box">
+          <text class="guide-text">不追刷量，只追"为什么错"</text>
+          <text class="guide-text">每周错题归类1次</text>
+        </view>
+      </view>
+
+      <!-- 综合应用 -->
+      <view class="guide-section">
+        <view class="guide-section-title">三、综合应用必练（每周）</view>
+
+        <view class="guide-item">
+          <view class="guide-title">📝 题型配比</view>
+          <view class="guide-content">
+            <text class="guide-text">• 案例分析 1题（问题-原因-对策）</text>
+            <text class="guide-text">• 对策建议 1题（机制+执行）</text>
+            <text class="guide-text">• 应用文 1题（会写即可）</text>
+          </view>
+        </view>
+
+        <view class="answer-structure">
+          <text class="structure-title">万能答题结构：</text>
+          <text class="structure-item">1️⃣ 概括问题</text>
+          <text class="structure-item">2️⃣ 分析原因（制度/执行/技术）</text>
+          <text class="structure-item">3️⃣ 提出对策（流程/信息化/协调）</text>
+        </view>
+      </view>
+
+      <!-- 阅读方法 -->
+      <view class="guide-section">
+        <view class="guide-section-title">四、常识阅读方法（每日30分钟）</view>
+
+        <view class="guide-item">
+          <view class="guide-title">📖 《半月谈》读法</view>
+          <view class="guide-content">
+            <text class="guide-text">• 只看：调查类、政策解读、问题+对策结构</text>
+            <text class="guide-text">• 圈出：问题描述句、对策表述句</text>
+            <text class="guide-text">• 输出：改写成选项句式</text>
+            <text class="guide-highlight">目标：学习官方表达方式</text>
+          </view>
+        </view>
+
+        <view class="guide-item">
+          <view class="guide-title">📰 《光明日报》读法</view>
+          <view class="guide-content">
+            <text class="guide-text">• 只看：理论版、时评中段、教育文化版</text>
+            <text class="guide-text">• 记录：概念搭配、平衡句式</text>
+            <text class="guide-text">• 学习："既要...也要..."等价值权衡表达</text>
+          </view>
+        </view>
+
+        <view class="sentence-templates">
+          <text class="template-title">高频句式模板：</text>
+          <text class="template-item">• "在...背景下"</text>
+          <text class="template-item">• "应当通过...机制"</text>
+          <text class="template-item">• "引导/推动/完善..."</text>
+          <text class="template-item">• "逐步/有序/依法推进"</text>
+        </view>
+      </view>
+
+      <!-- 3个月节奏 -->
+      <view class="guide-section">
+        <view class="guide-section-title">五、3个月节奏控制</view>
+
+        <view class="timeline">
+          <view class="timeline-item">
+            <text class="timeline-month">第1月</text>
+            <text class="timeline-goal">熟题型，不求分 + 会写，不慌</text>
+          </view>
+          <view class="timeline-item">
+            <text class="timeline-month">第2月</text>
+            <text class="timeline-goal">稳定60-70分 + 有模板</text>
+          </view>
+          <view class="timeline-item">
+            <text class="timeline-month">第3月</text>
+            <text class="timeline-goal">模拟不崩 + 限时完成</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 每周复盘 -->
+      <view class="guide-section">
+        <view class="guide-section-title">六、每周复盘（10分钟）</view>
+
+        <view class="review-checklist">
+          <text class="review-item">□ 哪个模块最稳？</text>
+          <text class="review-item">□ 哪类错误反复出现？</text>
+          <text class="review-item">□ 是否有0学习日？</text>
+          <text class="review-item">□ 下周只改1个问题</text>
+        </view>
+      </view>
+
+      <!-- 每日自检 -->
+      <view class="guide-section">
+        <view class="guide-section-title">七、每日自检（一句话）</view>
+
+        <view class="daily-check">
+          <text class="check-question">今天有没有做「最小任务」？</text>
+          <text class="check-answer">✔ 做了 = 没跑偏</text>
+          <text class="check-answer">✘ 没做 = 明天补</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 操作按钮 -->
   <view class="section">
     <button class="btn-primary" bindtap="saveConfig">保存配置</button>

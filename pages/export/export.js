@@ -3,7 +3,9 @@ const { generateExportText } = require('../../utils/export.js');
 Page({
   data: {
     exportText: '',
-    onlyCompleted: false
+    onlyCompleted: false,
+    totalDays: 0,
+    completedDays: 0
   },
 
   onLoad() {
@@ -16,8 +18,12 @@ Page({
 
   generateExport() {
     const { onlyCompleted } = this.data;
-    const exportText = generateExportText(onlyCompleted);
-    this.setData({ exportText });
+    const result = generateExportText(onlyCompleted);
+    this.setData({
+      exportText: result.text,
+      totalDays: result.totalCount,
+      completedDays: result.completedCount
+    });
   },
 
   onOnlyCompletedChange(e) {

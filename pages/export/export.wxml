@@ -1,22 +1,44 @@
 <view class="container">
+  <!-- 使用说明 -->
+  <view class="section instruction-section">
+    <view class="instruction-title">💡 导出说明</view>
+    <view class="instruction-content">
+      <text class="instruction-text">• 点击"一键复制"按钮复制打卡记录</text>
+      <text class="instruction-text">• 可分享至微信、备忘录等应用</text>
+      <text class="instruction-text">• 开启"仅完成日"可过滤未完成记录</text>
+    </view>
+  </view>
+
   <!-- 导出选项 -->
   <view class="section">
-    <view class="section-title">导出选项</view>
+    <view class="section-title">筛选选项</view>
     <view class="export-option">
-      <text class="option-label">仅导出完成日</text>
-      <switch checked="{{ onlyCompleted }}" bindchange="onOnlyCompletedChange" />
+      <view class="option-info">
+        <text class="option-label">仅导出完成日</text>
+        <text class="option-desc">只显示打卡完成的日期</text>
+      </view>
+      <switch checked="{{ onlyCompleted }}" bindchange="onOnlyCompletedChange" color="#1AAD19" />
     </view>
   </view>
 
   <!-- 导出文本 -->
   <view class="section">
     <view class="section-title">最近30天记录</view>
+    <view class="record-stats">
+      <text class="stats-text">共 {{ totalDays }} 天记录，已完成 {{ completedDays }} 天</text>
+    </view>
     <textarea class="export-textarea" value="{{ exportText }}" disabled auto-height />
   </view>
 
   <!-- 操作按钮 -->
-  <view class="section">
-    <button class="btn-primary" bindtap="copyText">一键复制</button>
-    <button class="btn-default" bindtap="refreshExport">刷新数据</button>
+  <view class="action-buttons">
+    <button class="btn-primary btn-large" bindtap="copyText">
+      <text class="btn-icon">📋</text>
+      <text class="btn-text">一键复制</text>
+    </button>
+    <button class="btn-secondary" bindtap="refreshExport">
+      <text class="btn-icon">🔄</text>
+      <text class="btn-text">刷新数据</text>
+    </button>
   </view>
 </view>

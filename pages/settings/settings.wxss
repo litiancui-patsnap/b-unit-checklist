@@ -87,3 +87,296 @@
   border: 1px solid #ddd;
   border-radius: 4px;
 }
+
+/* 备考方法指引样式 */
+.collapsible {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-icon {
+  font-size: 14px;
+  color: #1AAD19;
+  margin-left: 8px;
+}
+
+.method-guide {
+  margin-top: 15px;
+}
+
+.guide-section {
+  margin-bottom: 20px;
+}
+
+.guide-section:last-child {
+  margin-bottom: 0;
+}
+
+.guide-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.guide-item {
+  margin-bottom: 15px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.guide-item:last-child {
+  margin-bottom: 0;
+}
+
+.guide-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1AAD19;
+  margin-bottom: 8px;
+}
+
+.guide-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guide-text {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.guide-highlight {
+  font-size: 13px;
+  color: #ff9800;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.sentence-templates {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.template-item {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.6;
+  padding: 4px 0;
+}
+
+.time-allocation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background-color: #e8f5e9;
+  border-radius: 8px;
+}
+
+.time-item {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.time-total {
+  font-size: 14px;
+  color: #1AAD19;
+  font-weight: 600;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #c8e6c9;
+}
+
+/* 核心原则 */
+.principle-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background-color: #fff3e0;
+  border-radius: 8px;
+  border-left: 3px solid #ff9800;
+}
+
+.principle-text {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.principle-highlight {
+  font-size: 14px;
+  color: #ff6f00;
+  font-weight: 600;
+  margin-top: 4px;
+  text-align: center;
+}
+
+/* 优先级列表 */
+.priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.priority-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.priority-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  flex: 1;
+}
+
+.priority-percent {
+  font-size: 16px;
+  color: #1AAD19;
+  font-weight: 600;
+  margin: 0 12px;
+}
+
+.priority-task {
+  font-size: 13px;
+  color: #666;
+}
+
+/* 高亮提示框 */
+.guide-highlight-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+/* 答题结构 */
+.answer-structure {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background-color: #f1f8e9;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.structure-title {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.structure-item {
+  font-size: 13px;
+  color: #558b2f;
+  line-height: 1.6;
+  padding-left: 8px;
+}
+
+.template-title {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* 时间线 */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #fff;
+  border-radius: 8px;
+  border-left: 3px solid #1AAD19;
+}
+
+.timeline-month {
+  font-size: 14px;
+  color: #1AAD19;
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.timeline-goal {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin-left: 12px;
+}
+
+/* 复盘清单 */
+.review-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background-color: #fafafa;
+  border-radius: 8px;
+}
+
+.review-item {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.8;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+/* 每日自检 */
+.daily-check {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.check-question {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.check-answer {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.8;
+}

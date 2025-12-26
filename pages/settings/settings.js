@@ -9,7 +9,8 @@ Page({
     templateC: null,
     reminderEnabled: false,
     reminderTime: '21:30',
-    config: null
+    config: null,
+    showMethodGuide: false
   },
 
   onLoad() {
@@ -287,6 +288,12 @@ Page({
           }
         }
       }
+    });
+  },
+
+  toggleMethodGuide() {
+    this.setData({
+      showMethodGuide: !this.data.showMethodGuide
     });
   }
 });
