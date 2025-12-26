@@ -64,7 +64,7 @@
 /* 导出文本框 */
 .export-textarea {
   width: 100%;
-  min-height: 400px;
+  height: 500px;
   border: 1.5px solid #e0e0e0;
   border-radius: 8px;
   padding: 12px;

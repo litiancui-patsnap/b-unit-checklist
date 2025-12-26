@@ -27,7 +27,7 @@
     <view class="record-stats">
       <text class="stats-text">共 {{ totalDays }} 天记录，已完成 {{ completedDays }} 天</text>
     </view>
-    <textarea class="export-textarea" value="{{ exportText }}" disabled auto-height />
+    <textarea class="export-textarea" value="{{ exportText }}" disabled maxlength="-1" show-confirm-bar="{{ false }}" />
   </view>
 
   <!-- 操作按钮 -->
