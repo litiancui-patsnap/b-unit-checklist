@@ -67,13 +67,23 @@
     <view class="section-title">提醒设置</view>
     <view class="reminder-row">
       <text class="reminder-label">开启提醒</text>
-      <switch checked="{{ reminderEnabled }}" bindchange="onReminderSwitch" />
+      <switch checked="{{ reminderEnabled }}" bindchange="onReminderSwitch" color="#1AAD19" />
     </view>
     <view class="reminder-row">
       <text class="reminder-label">提醒时间</text>
       <picker mode="time" value="{{ reminderTime }}" bindchange="onTimeChange">
         <view class="time-picker">{{ reminderTime }}</view>
       </picker>
+    </view>
+
+    <!-- 提醒说明 -->
+    <view class="reminder-notice">
+      <view class="notice-title">⚠️ 提醒说明</view>
+      <view class="notice-content">
+        <text class="notice-text">• 小程序打开时会在设定时间弹出提醒</text>
+        <text class="notice-text">• 小程序未打开时无法收到提醒</text>
+        <text class="notice-highlight">💡 建议：同时设置手机闹钟确保不遗漏</text>
+      </view>
     </view>
   </view>
 
