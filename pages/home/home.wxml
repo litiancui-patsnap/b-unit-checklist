@@ -1,0 +1,81 @@
+<view class="container">
+  <!-- 日期与完成状态 -->
+  <view class="section date-section">
+    <view class="date-display">{{ today }}</view>
+    <view class="complete-badge" wx:if="{{ todayData.complete }}">今日完成 ✅</view>
+  </view>
+
+  <!-- 统计区 -->
+  <view class="section stats-section">
+    <view class="stat-item">
+      <text class="stat-label">今日进度</text>
+      <text class="stat-value">{{ progress }}%</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-label">连续打卡</text>
+      <text class="stat-value">{{ streak }}天</text>
+    </view>
+  </view>
+
+  <!-- 提醒状态 -->
+  <view class="section reminder-section" wx:if="{{ reminderEnabled }}">
+    <text class="reminder-text">⏰ 提醒已开启: {{ reminderTime }}</text>
+  </view>
+
+  <!-- 模板选择 -->
+  <view class="section template-section">
+    <view class="section-title">选择今日疲劳模板</view>
+    <view class="template-buttons">
+      <view class="template-btn {{ todayData.template === 'A' ? 'active' : '' }}" bindtap="selectTemplate" data-template="A">A</view>
+      <view class="template-btn {{ todayData.template === 'B' ? 'active' : '' }}" bindtap="selectTemplate" data-template="B">B</view>
+      <view class="template-btn {{ todayData.template === 'C' ? 'active' : '' }}" bindtap="selectTemplate" data-template="C">C</view>
+    </view>
+  </view>
+
+  <!-- 启动流程清单 -->
+  <view class="section checklist-section">
+    <view class="section-title">启动流程</view>
+    <view class="checklist-items" wx:if="{{ startChecklist.length > 0 }}">
+      <view class="checklist-item" wx:for="{{ startChecklist }}" wx:key="id">
+        <checkbox checked="{{ todayData.start[item.id] || false }}" bindtap="toggleStart" data-id="{{ item.id }}" />
+        <text class="item-text">{{ item.text }}</text>
+      </view>
+    </view>
+    <view class="empty-state" wx:else>
+      <text class="empty-text">暂无启动流程，请到设置页添加</text>
+    </view>
+  </view>
+
+  <!-- 模板清单 -->
+  <view class="section checklist-section" wx:if="{{ currentTemplate }}">
+    <view class="section-title">{{ currentTemplate.title }}</view>
+    <view class="checklist-items" wx:if="{{ currentTemplate.items.length > 0 }}">
+      <view class="checklist-item" wx:for="{{ currentTemplate.items }}" wx:key="id">
+        <checkbox checked="{{ todayData.items[item.id] || false }}" bindtap="toggleItem" data-id="{{ item.id }}" />
+        <text class="item-text">{{ item.text }}</text>
+      </view>
+    </view>
+    <view class="empty-state" wx:else>
+      <text class="empty-text">当前模板无内容，请到设置页添加</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="section actions-section">
+    <button class="btn-primary" wx:if="{{ !todayData.complete }}" bindtap="completeToday">完成今日</button>
+    <button class="btn-default" wx:if="{{ todayData.complete }}" bindtap="uncompleteToday">取消完成</button>
+    <button class="btn-danger" bindtap="resetToday">重置今天</button>
+  </view>
+
+  <!-- 最近7天 -->
+  <view class="section recent-section">
+    <view class="section-title">最近7天</view>
+    <view class="recent-list">
+      <view class="recent-item" wx:for="{{ recent7Days }}" wx:key="date">
+        <text class="recent-date">{{ item.date }}</text>
+        <text class="recent-template">{{ item.template }}</text>
+        <text class="recent-complete">{{ item.complete }}</text>
+      </view>
+    </view>
+  </view>
+</view>
