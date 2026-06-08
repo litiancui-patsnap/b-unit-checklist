@@ -4,39 +4,44 @@ function generateId() {
 
 function getDefaultConfig() {
   return {
+    version: 'ENGLISH_LEARNING_V1',
+    learningGoal: 'daily',
+    dailyIntensity: 'B',
     startChecklist: [
-      { id: generateId(), text: '手机静音,放远处' },
-      { id: generateId(), text: '倒一杯水' },
+      { id: generateId(), text: '准备好单词本或学习 App' },
+      { id: generateId(), text: '手机调成专注模式' },
       { id: generateId(), text: '打开计时器' },
-      { id: generateId(), text: '深呼吸3次' }
+      { id: generateId(), text: '大声读一句英文进入状态' }
     ],
     templates: {
       A: {
-        title: '模板A',
+        title: '轻量英语任务',
         threshold: 1,
         items: [
-          { id: generateId(), text: '综合应用能力 1题' },
-          { id: generateId(), text: '复习笔记 10分钟' }
+          { id: generateId(), text: '背 10 个单词' },
+          { id: generateId(), text: '听 5 分钟英语音频' },
+          { id: generateId(), text: '跟读 3 句英文' }
         ]
       },
       B: {
-        title: '模板B',
+        title: '标准英语任务',
         threshold: 2,
         items: [
-          { id: generateId(), text: '综合应用能力 2题' },
-          { id: generateId(), text: '职业能力测试 20题' },
-          { id: generateId(), text: '复习错题本 15分钟' },
-          { id: generateId(), text: '整理笔记' }
+          { id: generateId(), text: '背 20 个单词并复习昨日单词' },
+          { id: generateId(), text: '听 10 分钟英语音频' },
+          { id: generateId(), text: '跟读 5 句英文' },
+          { id: generateId(), text: '写 1 句英文日记' }
         ]
       },
       C: {
-        title: '模板C',
-        threshold: 2,
+        title: '强化英语任务',
+        threshold: 3,
         items: [
-          { id: generateId(), text: '综合应用能力 3题' },
-          { id: generateId(), text: '职业能力测试 40题' },
-          { id: generateId(), text: '专项训练 30分钟' },
-          { id: generateId(), text: '模拟考试 1套' }
+          { id: generateId(), text: '背 40 个单词并整理易错词' },
+          { id: generateId(), text: '精听 15 分钟英语音频' },
+          { id: generateId(), text: '跟读 10 句英文并录音回听' },
+          { id: generateId(), text: '阅读 1 段英文短文' },
+          { id: generateId(), text: '写 3 句英文日记' }
         ]
       }
     },

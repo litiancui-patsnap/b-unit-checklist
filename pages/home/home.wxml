@@ -2,7 +2,8 @@
   <!-- 日期与完成状态 -->
   <view class="section date-section">
     <view class="date-display">{{ today }}</view>
-    <view class="complete-badge" wx:if="{{ todayData.complete }}">今日完成 ✅</view>
+    <view class="goal-display">{{ learningGoalText }} · {{ intensityText }}强度</view>
+    <view class="complete-badge" wx:if="{{ todayData.complete }}">今日英语完成 ✅</view>
   </view>
 
   <!-- 统计区 -->
@@ -12,29 +13,38 @@
       <text class="stat-value">{{ progress }}%</text>
     </view>
     <view class="stat-item">
-      <text class="stat-label">连续打卡</text>
+      <text class="stat-label">连续学习</text>
       <text class="stat-value">{{ streak }}天</text>
     </view>
   </view>
 
   <!-- 提醒状态 -->
   <view class="section reminder-section" wx:if="{{ reminderEnabled }}">
-    <text class="reminder-text">⏰ 提醒已开启: {{ reminderTime }}</text>
+    <text class="reminder-text">⏰ 英语学习提醒: {{ reminderTime }}</text>
   </view>
 
   <!-- 模板选择 -->
   <view class="section template-section">
-    <view class="section-title">选择今日疲劳模板</view>
+    <view class="section-title">今日英语任务强度</view>
     <view class="template-buttons">
-      <view class="template-btn {{ todayData.template === 'A' ? 'active' : '' }}" bindtap="selectTemplate" data-template="A">A</view>
-      <view class="template-btn {{ todayData.template === 'B' ? 'active' : '' }}" bindtap="selectTemplate" data-template="B">B</view>
-      <view class="template-btn {{ todayData.template === 'C' ? 'active' : '' }}" bindtap="selectTemplate" data-template="C">C</view>
+      <view class="template-btn {{ todayData.template === 'A' ? 'active' : '' }}" bindtap="selectTemplate" data-template="A">
+        <text class="template-letter">A</text>
+        <text class="template-name">轻量</text>
+      </view>
+      <view class="template-btn {{ todayData.template === 'B' ? 'active' : '' }}" bindtap="selectTemplate" data-template="B">
+        <text class="template-letter">B</text>
+        <text class="template-name">标准</text>
+      </view>
+      <view class="template-btn {{ todayData.template === 'C' ? 'active' : '' }}" bindtap="selectTemplate" data-template="C">
+        <text class="template-letter">C</text>
+        <text class="template-name">强化</text>
+      </view>
     </view>
   </view>
 
   <!-- 启动流程清单 -->
   <view class="section checklist-section">
-    <view class="section-title">启动流程</view>
+    <view class="section-title">学习前准备</view>
     <view class="checklist-items" wx:if="{{ startChecklist.length > 0 }}">
       <view class="checklist-item" wx:for="{{ startChecklist }}" wx:key="id">
         <checkbox checked="{{ todayData.start[item.id] || false }}" bindtap="toggleStart" data-id="{{ item.id }}" />
@@ -42,11 +52,11 @@
       </view>
     </view>
     <view class="empty-state" wx:else>
-      <text class="empty-text">暂无启动流程，请到设置页添加</text>
+      <text class="empty-text">暂无学习前准备，请到设置页添加</text>
     </view>
   </view>
 
-  <!-- 模板清单 -->
+  <!-- 今日英语任务 -->
   <view class="section checklist-section" wx:if="{{ currentTemplate }}">
     <view class="section-title">{{ currentTemplate.title }}</view>
     <view class="checklist-items" wx:if="{{ currentTemplate.items.length > 0 }}">
@@ -56,20 +66,34 @@
       </view>
     </view>
     <view class="empty-state" wx:else>
-      <text class="empty-text">当前模板无内容，请到设置页添加</text>
+      <text class="empty-text">当前强度暂无任务，请到设置页添加</text>
     </view>
+  </view>
+
+  <!-- 英文日记 -->
+  <view class="section diary-section">
+    <view class="section-title">英文日记一句话</view>
+    <textarea class="diary-input" value="{{ todayData.diary }}" bindinput="onDiaryInput" bindblur="saveDiary" maxlength="200" placeholder="Write one sentence in English today." show-confirm-bar="{{ false }}" />
+    <view class="diary-hint">写一句就算数，例如：I learned English for 15 minutes today.</view>
   </view>
 
   <!-- 操作按钮 -->
   <view class="section actions-section">
-    <button class="btn-primary" wx:if="{{ !todayData.complete }}" bindtap="completeToday">完成今日</button>
+    <button class="btn-primary" wx:if="{{ !todayData.complete }}" bindtap="completeToday">完成今日英语</button>
     <button class="btn-default" wx:if="{{ todayData.complete }}" bindtap="uncompleteToday">取消完成</button>
     <button class="btn-danger" bindtap="resetToday">重置今天</button>
   </view>
 
+  <!-- 分享文案 -->
+  <view class="section share-section" wx:if="{{ shareText }}">
+    <view class="section-title">打卡分享文案</view>
+    <textarea class="share-textarea" value="{{ shareText }}" disabled maxlength="-1" show-confirm-bar="{{ false }}" />
+    <button class="btn-primary" bindtap="copyShareText">复制分享文案</button>
+  </view>
+
   <!-- 最近7天 -->
   <view class="section recent-section">
-    <view class="section-title">最近7天</view>
+    <view class="section-title">最近7天学习</view>
     <view class="recent-list">
       <view class="recent-item" wx:for="{{ recent7Days }}" wx:key="date">
         <text class="recent-date">{{ item.date }}</text>

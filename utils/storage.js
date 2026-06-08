@@ -1,18 +1,59 @@
 const STORAGE_KEY = 'B_UNIT_CHECKLIST_PRO_V1';
 const { getDefaultConfig } = require('./defaultConfig.js');
 
+function createDefaultData() {
+  return {
+    config: getDefaultConfig(),
+    days: {},
+    meta: {
+      remind_last_shown_date: ''
+    }
+  };
+}
+
+function normalizeData(data) {
+  if (!data) {
+    return createDefaultData();
+  }
+
+  const defaultData = createDefaultData();
+  const normalized = {
+    config: data.config || defaultData.config,
+    days: data.days || {},
+    meta: data.meta || defaultData.meta
+  };
+
+  if (normalized.config.version !== defaultData.config.version) {
+    normalized.config = defaultData.config;
+  } else {
+    normalized.config = {
+      ...defaultData.config,
+      ...normalized.config,
+      templates: {
+        ...defaultData.config.templates,
+        ...(normalized.config.templates || {})
+      },
+      reminder: {
+        ...defaultData.config.reminder,
+        ...(normalized.config.reminder || {})
+      }
+    };
+  }
+
+  return normalized;
+}
+
 function initStorage() {
   try {
     const data = wx.getStorageSync(STORAGE_KEY);
     if (!data) {
-      const defaultData = {
-        config: getDefaultConfig(),
-        days: {},
-        meta: {
-          remind_last_shown_date: ''
-        }
-      };
-      wx.setStorageSync(STORAGE_KEY, defaultData);
+      wx.setStorageSync(STORAGE_KEY, createDefaultData());
+      return;
+    }
+
+    const normalizedData = normalizeData(data);
+    if (JSON.stringify(normalizedData.config) !== JSON.stringify(data.config || {})) {
+      wx.setStorageSync(STORAGE_KEY, normalizedData);
     }
   } catch (e) {
     console.error('初始化存储失败', e);
@@ -22,10 +63,10 @@ function initStorage() {
 function getData() {
   try {
     const data = wx.getStorageSync(STORAGE_KEY);
-    return data || { config: getDefaultConfig(), days: {}, meta: { remind_last_shown_date: '' } };
+    return normalizeData(data);
   } catch (e) {
     console.error('读取存储失败', e);
-    return { config: getDefaultConfig(), days: {}, meta: { remind_last_shown_date: '' } };
+    return createDefaultData();
   }
 }
 
@@ -81,12 +122,7 @@ function setMeta(meta) {
 }
 
 function resetAllData() {
-  const defaultData = {
-    config: getDefaultConfig(),
-    days: {},
-    meta: { remind_last_shown_date: '' }
-  };
-  return setData(defaultData);
+  return setData(createDefaultData());
 }
 
 module.exports = {

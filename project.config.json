@@ -1,5 +1,5 @@
 {
-  "description": "江苏事业单位B类备考打勾清单",
+  "description": "每日英语学习打卡小程序",
   "packOptions": {
     "ignore": [],
     "include": []
@@ -49,7 +49,7 @@
   "compileType": "miniprogram",
   "libVersion": "3.0.0",
   "appid": "wx63290a3d7d124980",
-  "projectname": "b-unit-checklist",
+  "projectname": "english-learning-checklist",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",

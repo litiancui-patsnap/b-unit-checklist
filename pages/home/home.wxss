@@ -10,6 +10,12 @@
   letter-spacing: 1px;
 }
 
+.goal-display {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
 .complete-badge {
   margin-top: 12px;
   font-size: 16px;
@@ -74,6 +80,20 @@
   background-color: #fafafa;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.template-letter {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.template-name {
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .template-btn.active {
@@ -117,6 +137,38 @@
 .actions-section {
   display: flex;
   flex-direction: column;
+}
+
+.diary-input {
+  width: 100%;
+  min-height: 110px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  background-color: #fafafa;
+  box-sizing: border-box;
+}
+
+.diary-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.6;
+}
+
+.share-textarea {
+  width: 100%;
+  min-height: 180px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.8;
+  background-color: #fafafa;
+  color: #333;
+  box-sizing: border-box;
 }
 
 .recent-section {

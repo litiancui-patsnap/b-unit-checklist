@@ -1,6 +1,20 @@
 const { getToday, getRecentDates, getTodayDate, isTimeAfter } = require('../../utils/date.js');
 const { getConfig, getDayData, setDayData, getAllDays, getMeta, setMeta } = require('../../utils/storage.js');
 
+const GOAL_LABELS = {
+  daily: '日常英语',
+  spoken: '口语表达',
+  cet: '四六级备考',
+  exam: '考研英语',
+  business: '职场英语'
+};
+
+const INTENSITY_LABELS = {
+  A: '轻量',
+  B: '标准',
+  C: '强化'
+};
+
 Page({
   data: {
     today: '',
@@ -9,7 +23,8 @@ Page({
       template: '',
       start: {},
       items: {},
-      complete: false
+      complete: false,
+      diary: ''
     },
     startChecklist: [],
     currentTemplate: null,
@@ -17,7 +32,10 @@ Page({
     streak: 0,
     recent7Days: [],
     reminderEnabled: false,
-    reminderTime: ''
+    reminderTime: '',
+    learningGoalText: '',
+    intensityText: '',
+    shareText: ''
   },
 
   onLoad() {
@@ -46,11 +64,18 @@ Page({
 
       if (!todayData) {
         todayData = {
-          template: '',
+          template: config.dailyIntensity || 'B',
           start: {},
           items: {},
-          complete: false
+          complete: false,
+          diary: ''
         };
+      } else if (!todayData.template) {
+        todayData.template = config.dailyIntensity || 'B';
+      }
+
+      if (typeof todayData.diary !== 'string') {
+        todayData.diary = '';
       }
 
       this.setData({
@@ -59,13 +84,21 @@ Page({
         todayData,
         startChecklist: config.startChecklist || [],
         reminderEnabled: config.reminder?.enabled || false,
-        reminderTime: config.reminder?.time || '21:30'
+        reminderTime: config.reminder?.time || '21:30',
+        learningGoalText: GOAL_LABELS[config.learningGoal] || '日常英语',
+        intensityText: INTENSITY_LABELS[todayData.template] || '标准',
+        shareText: ''
       });
 
       this.updateCurrentTemplate();
       this.calculateProgress();
-      this.calculateStreak();
+      const streak = this.calculateStreak();
       this.loadRecent7Days();
+      if (todayData.complete) {
+        this.setData({
+          shareText: this.generateShareText(todayData, streak)
+        });
+      }
     } catch (error) {
       console.error('loadData error:', error);
       wx.showToast({
@@ -99,7 +132,11 @@ Page({
     todayData.template = template;
     todayData.items = {};
 
-    this.setData({ todayData });
+    this.setData({
+      todayData,
+      intensityText: INTENSITY_LABELS[template] || '标准',
+      shareText: ''
+    });
     this.updateCurrentTemplate();
     this.calculateProgress();
     this.saveTodayData();
@@ -135,6 +172,20 @@ Page({
     this.saveTodayData();
   },
 
+  onDiaryInput(e) {
+    const value = e.detail.value;
+    const { todayData } = this.data;
+    todayData.diary = value;
+    this.setData({
+      todayData,
+      shareText: todayData.complete ? this.generateShareText(todayData) : ''
+    });
+  },
+
+  saveDiary() {
+    this.saveTodayData();
+  },
+
   calculateProgress() {
     const { todayData, startChecklist, currentTemplate } = this.data;
 
@@ -156,7 +207,7 @@ Page({
 
     if (!todayData.template) {
       wx.showToast({
-        title: '先选A/B/C模板',
+        title: '先选择学习强度',
         icon: 'none'
       });
       return;
@@ -168,7 +219,7 @@ Page({
 
     if (checkedCount < threshold) {
       wx.showToast({
-        title: `模板${todayData.template}需勾选至少${threshold}项`,
+        title: `${INTENSITY_LABELS[todayData.template] || '当前强度'}需完成至少${threshold}项`,
         icon: 'none'
       });
       return;
@@ -177,10 +228,13 @@ Page({
     todayData.complete = true;
     this.setData({ todayData });
     this.saveTodayData();
-    this.calculateStreak();
+    const streak = this.calculateStreak();
+    this.setData({
+      shareText: this.generateShareText(todayData, streak)
+    });
 
     wx.showToast({
-      title: '今日完成 ✅',
+      title: '今日英语完成',
       icon: 'success'
     });
   },
@@ -188,7 +242,7 @@ Page({
   uncompleteToday() {
     const { todayData } = this.data;
     todayData.complete = false;
-    this.setData({ todayData });
+    this.setData({ todayData, shareText: '' });
     this.saveTodayData();
     this.calculateStreak();
 
@@ -205,16 +259,19 @@ Page({
       success: (res) => {
         if (res.confirm) {
           const todayData = {
-            template: '',
+            template: this.data.config?.dailyIntensity || 'B',
             start: {},
             items: {},
-            complete: false
+            complete: false,
+            diary: ''
           };
 
           this.setData({
             todayData,
-            currentTemplate: null
+            shareText: '',
+            intensityText: INTENSITY_LABELS[todayData.template] || '标准'
           });
+          this.updateCurrentTemplate();
           this.calculateProgress();
           this.saveTodayData();
           this.calculateStreak();
@@ -255,6 +312,7 @@ Page({
     }
 
     this.setData({ streak });
+    return streak;
   },
 
   loadRecent7Days() {
@@ -266,7 +324,7 @@ Page({
       const dayData = allDays[date];
       recent7Days.push({
         date,
-        template: dayData?.template || '-',
+        template: dayData?.template ? (INTENSITY_LABELS[dayData.template] || dayData.template) : '-',
         complete: dayData?.complete ? '✅' : '—'
       });
     });
@@ -297,7 +355,7 @@ Page({
 
     if (isTimeAfter(now, reminderTime)) {
       wx.showToast({
-        title: '该打卡啦！',
+        title: '该学英语啦！',
         icon: 'none',
         duration: 3000
       });
@@ -305,5 +363,40 @@ Page({
       meta.remind_last_shown_date = today;
       setMeta(meta);
     }
+  },
+
+  generateShareText(dayData = this.data.todayData, streakValue = this.data.streak) {
+    const { today, streak, learningGoalText, intensityText } = this.data;
+    const checkedCount = Object.values(dayData.items || {}).filter(Boolean).length;
+    const diary = (dayData.diary || '').trim();
+    let text = `我今天完成了英语学习打卡！\n`;
+    text += `日期：${today}\n`;
+    text += `目标：${learningGoalText || '日常英语'}\n`;
+    text += `强度：${intensityText || INTENSITY_LABELS[dayData.template] || '标准'}\n`;
+    text += `任务：完成 ${checkedCount} 项\n`;
+    text += `连续学习：${streakValue || streak} 天`;
+    if (diary) {
+      text += `\n今日英文句子：${diary}`;
+    }
+    return text;
+  },
+
+  copyShareText() {
+    const shareText = this.data.shareText || this.generateShareText();
+    wx.setClipboardData({
+      data: shareText,
+      success: () => {
+        wx.showToast({
+          title: '分享文案已复制',
+          icon: 'success'
+        });
+      },
+      fail: () => {
+        wx.showToast({
+          title: '复制失败',
+          icon: 'none'
+        });
+      }
+    });
   }
 });
