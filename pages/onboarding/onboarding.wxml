@@ -1,0 +1,31 @@
+<view class="container onboarding-page">
+  <view class="hero-section">
+    <view class="hero-title">每天 15 分钟英语陪练</view>
+    <view class="hero-subtitle">先选目标和强度，今天就能开始。</view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">选择学习目标</view>
+    <view class="choice-list">
+      <view class="choice-item {{ selectedGoal === item.value ? 'active' : '' }}" wx:for="{{ goals }}" wx:key="value" bindtap="selectGoal" data-goal="{{ item.value }}">
+        <view class="choice-main">{{ item.label }}</view>
+        <view class="choice-desc">{{ item.description }}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">选择每日强度</view>
+    <view class="choice-list">
+      <view class="choice-item {{ selectedIntensity === item.value ? 'active' : '' }}" wx:for="{{ intensities }}" wx:key="value" bindtap="selectIntensity" data-intensity="{{ item.value }}">
+        <view class="choice-row">
+          <text class="choice-main">{{ item.label }}</text>
+          <text class="minutes-badge">{{ item.minutes }} 分钟</text>
+        </view>
+        <view class="choice-desc">{{ item.description }}</view>
+      </view>
+    </view>
+  </view>
+
+  <button class="btn-primary start-button" bindtap="startLearning">生成今日英语计划</button>
+</view>

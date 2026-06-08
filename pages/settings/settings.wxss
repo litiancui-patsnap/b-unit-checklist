@@ -100,6 +100,17 @@
   padding: 5px 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  text-align: right;
+}
+
+.diary-template-preview {
+  padding: 9px 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #365136;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 /* 提醒说明 */

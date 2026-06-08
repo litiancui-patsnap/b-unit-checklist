@@ -1,5 +1,6 @@
 {
   "pages": [
+    "pages/onboarding/onboarding",
     "pages/home/home",
     "pages/settings/settings",
     "pages/export/export"

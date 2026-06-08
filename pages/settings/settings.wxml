@@ -16,10 +16,11 @@
         <text class="reminder-label">每日默认强度</text>
         <text class="option-desc">新的一天会默认展示这个强度的任务</text>
       </view>
-      <picker mode="selector" range="{{ dailyIntensityOptions }}" range-key="label" value="{{ dailyIntensityIndex }}" bindchange="onDailyIntensityChange">
+      <picker mode="selector" range="{{ dailyIntensityOptions }}" range-key="displayLabel" value="{{ dailyIntensityIndex }}" bindchange="onDailyIntensityChange">
         <view class="time-picker">{{ dailyIntensityOptions[dailyIntensityIndex].label }}</view>
       </picker>
     </view>
+    <button class="btn-default" bindtap="applyGoalDefaults">按当前目标生成默认任务</button>
   </view>
 
   <!-- 学习前准备配置 -->
@@ -83,6 +84,12 @@
       </view>
     </view>
     <button class="btn-default" bindtap="addTemplateItem" data-template="C">新增一项</button>
+  </view>
+
+  <!-- 英文日记模板 -->
+  <view class="section">
+    <view class="section-title">英文日记模板</view>
+    <view class="diary-template-preview" wx:for="{{ diaryTemplates }}" wx:key="*this">{{ item }}</view>
   </view>
 
   <!-- 提醒设置 -->

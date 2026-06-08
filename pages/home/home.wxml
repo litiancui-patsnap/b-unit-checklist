@@ -13,6 +13,10 @@
       <text class="stat-value">{{ progress }}%</text>
     </view>
     <view class="stat-item">
+      <text class="stat-label">预计用时</text>
+      <text class="stat-value">{{ planTotalMinutes }}分</text>
+    </view>
+    <view class="stat-item">
       <text class="stat-label">连续学习</text>
       <text class="stat-value">{{ streak }}天</text>
     </view>
@@ -23,9 +27,26 @@
     <text class="reminder-text">⏰ 英语学习提醒: {{ reminderTime }}</text>
   </view>
 
-  <!-- 模板选择 -->
+  <!-- 今日计划概览 -->
+  <view class="section plan-summary-section">
+    <view class="section-title">今日学习计划</view>
+    <view class="plan-summary">
+      <view class="plan-summary-main">
+        <text class="plan-summary-title">{{ learningGoalText }} · {{ intensityText }}</text>
+        <text class="plan-summary-desc">完成 {{ planRequiredCount }} 项即可打卡，预计 {{ planTotalMinutes }} 分钟</text>
+      </view>
+    </view>
+    <view class="module-list" wx:if="{{ planModules.length > 0 }}">
+      <view class="module-chip" wx:for="{{ planModules }}" wx:key="name">
+        <text class="module-name">{{ item.name }}</text>
+        <text class="module-meta">{{ item.count }}项 · {{ item.minutes }}分</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 强度选择 -->
   <view class="section template-section">
-    <view class="section-title">今日英语任务强度</view>
+    <view class="section-title">切换今日强度</view>
     <view class="template-buttons">
       <view class="template-btn {{ todayData.template === 'A' ? 'active' : '' }}" bindtap="selectTemplate" data-template="A">
         <text class="template-letter">A</text>
@@ -42,7 +63,7 @@
     </view>
   </view>
 
-  <!-- 启动流程清单 -->
+  <!-- 学习前准备 -->
   <view class="section checklist-section">
     <view class="section-title">学习前准备</view>
     <view class="checklist-items" wx:if="{{ startChecklist.length > 0 }}">
@@ -62,7 +83,13 @@
     <view class="checklist-items" wx:if="{{ currentTemplate.items.length > 0 }}">
       <view class="checklist-item" wx:for="{{ currentTemplate.items }}" wx:key="id">
         <checkbox checked="{{ todayData.items[item.id] || false }}" bindtap="toggleItem" data-id="{{ item.id }}" />
-        <text class="item-text">{{ item.text }}</text>
+        <view class="task-content">
+          <view class="task-title">{{ item.text }}</view>
+          <view class="task-meta">
+            <text>{{ item.module || '任务' }}</text>
+            <text wx:if="{{ item.minutes }}"> · {{ item.minutes }} 分钟</text>
+          </view>
+        </view>
       </view>
     </view>
     <view class="empty-state" wx:else>
@@ -73,6 +100,9 @@
   <!-- 英文日记 -->
   <view class="section diary-section">
     <view class="section-title">英文日记一句话</view>
+    <view class="diary-template-list" wx:if="{{ diaryTemplates.length > 0 }}">
+      <view class="diary-template" wx:for="{{ diaryTemplates }}" wx:key="*this" bindtap="useDiaryTemplate" data-template="{{ item }}">{{ item }}</view>
+    </view>
     <textarea class="diary-input" value="{{ todayData.diary }}" bindinput="onDiaryInput" bindblur="saveDiary" maxlength="200" placeholder="Write one sentence in English today." show-confirm-bar="{{ false }}" />
     <view class="diary-hint">写一句就算数，例如：I learned English for 15 minutes today.</view>
   </view>

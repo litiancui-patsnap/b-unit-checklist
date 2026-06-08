@@ -1,19 +1,7 @@
 const { getToday, getRecentDates, getTodayDate, isTimeAfter } = require('../../utils/date.js');
 const { getConfig, getDayData, setDayData, getAllDays, getMeta, setMeta } = require('../../utils/storage.js');
-
-const GOAL_LABELS = {
-  daily: '日常英语',
-  spoken: '口语表达',
-  cet: '四六级备考',
-  exam: '考研英语',
-  business: '职场英语'
-};
-
-const INTENSITY_LABELS = {
-  A: '轻量',
-  B: '标准',
-  C: '强化'
-};
+const { countCheckedByItems, normalizeCheckedMap } = require('../../utils/checklist.js');
+const { getGoalLabel, getIntensityLabel } = require('../../utils/defaultConfig.js');
 
 Page({
   data: {
@@ -35,6 +23,10 @@ Page({
     reminderTime: '',
     learningGoalText: '',
     intensityText: '',
+    planTotalMinutes: 0,
+    planRequiredCount: 0,
+    planModules: [],
+    diaryTemplates: [],
     shareText: ''
   },
 
@@ -51,6 +43,13 @@ Page({
     try {
       const today = getToday();
       const config = getConfig();
+
+      if (!config.hasOnboarded) {
+        wx.redirectTo({
+          url: '/pages/onboarding/onboarding'
+        });
+        return;
+      }
 
       if (!config || !config.startChecklist || !config.templates) {
         wx.showToast({
@@ -74,9 +73,17 @@ Page({
         todayData.template = config.dailyIntensity || 'B';
       }
 
+      if (!config.templates[todayData.template]) {
+        todayData.template = config.templates[config.dailyIntensity] ? config.dailyIntensity : Object.keys(config.templates)[0];
+      }
+
       if (typeof todayData.diary !== 'string') {
         todayData.diary = '';
       }
+
+      const currentTemplate = config.templates[todayData.template];
+      todayData.start = normalizeCheckedMap(todayData.start, config.startChecklist || []);
+      todayData.items = normalizeCheckedMap(todayData.items, currentTemplate?.items || []);
 
       this.setData({
         today,
@@ -85,8 +92,9 @@ Page({
         startChecklist: config.startChecklist || [],
         reminderEnabled: config.reminder?.enabled || false,
         reminderTime: config.reminder?.time || '21:30',
-        learningGoalText: GOAL_LABELS[config.learningGoal] || '日常英语',
-        intensityText: INTENSITY_LABELS[todayData.template] || '标准',
+        learningGoalText: getGoalLabel(config.learningGoal),
+        intensityText: getIntensityLabel(todayData.template),
+        diaryTemplates: config.diaryTemplates || [],
         shareText: ''
       });
 
@@ -111,14 +119,45 @@ Page({
   updateCurrentTemplate() {
     const { todayData, config } = this.data;
     if (todayData.template && config.templates[todayData.template]) {
+      const currentTemplate = config.templates[todayData.template];
       this.setData({
-        currentTemplate: config.templates[todayData.template]
+        currentTemplate,
+        ...this.getPlanSummary(currentTemplate)
       });
     } else {
       this.setData({
-        currentTemplate: null
+        currentTemplate: null,
+        planTotalMinutes: 0,
+        planRequiredCount: 0,
+        planModules: []
       });
     }
+  },
+
+  getPlanSummary(template) {
+    const items = template?.items || [];
+    const modules = [];
+
+    items.forEach(item => {
+      const moduleName = item.module || '任务';
+      const existing = modules.find(module => module.name === moduleName);
+      if (existing) {
+        existing.count++;
+        existing.minutes += Number(item.minutes || 0);
+      } else {
+        modules.push({
+          name: moduleName,
+          count: 1,
+          minutes: Number(item.minutes || 0)
+        });
+      }
+    });
+
+    return {
+      planTotalMinutes: items.reduce((sum, item) => sum + Number(item.minutes || 0), 0),
+      planRequiredCount: template?.threshold || 0,
+      planModules: modules
+    };
   },
 
   selectTemplate(e) {
@@ -134,7 +173,7 @@ Page({
 
     this.setData({
       todayData,
-      intensityText: INTENSITY_LABELS[template] || '标准',
+      intensityText: getIntensityLabel(template),
       shareText: ''
     });
     this.updateCurrentTemplate();
@@ -186,15 +225,26 @@ Page({
     this.saveTodayData();
   },
 
+  useDiaryTemplate(e) {
+    const template = e.currentTarget.dataset.template;
+    const { todayData } = this.data;
+    todayData.diary = template;
+    this.setData({
+      todayData,
+      shareText: todayData.complete ? this.generateShareText(todayData) : ''
+    });
+    this.saveTodayData();
+  },
+
   calculateProgress() {
     const { todayData, startChecklist, currentTemplate } = this.data;
 
     let totalItems = startChecklist.length;
-    let checkedItems = Object.values(todayData.start || {}).filter(Boolean).length;
+    let checkedItems = countCheckedByItems(todayData.start, startChecklist);
 
     if (currentTemplate) {
       totalItems += currentTemplate.items.length;
-      checkedItems += Object.values(todayData.items || {}).filter(Boolean).length;
+      checkedItems += countCheckedByItems(todayData.items, currentTemplate.items);
     }
 
     const progress = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
@@ -214,12 +264,20 @@ Page({
     }
 
     const template = config.templates[todayData.template];
+    if (!template) {
+      wx.showToast({
+        title: '当前强度暂无配置',
+        icon: 'none'
+      });
+      return;
+    }
+
     const threshold = template.threshold;
-    const checkedCount = Object.values(todayData.items || {}).filter(Boolean).length;
+    const checkedCount = countCheckedByItems(todayData.items, template.items);
 
     if (checkedCount < threshold) {
       wx.showToast({
-        title: `${INTENSITY_LABELS[todayData.template] || '当前强度'}需完成至少${threshold}项`,
+        title: `${getIntensityLabel(todayData.template)}需完成至少${threshold}项`,
         icon: 'none'
       });
       return;
@@ -269,7 +327,7 @@ Page({
           this.setData({
             todayData,
             shareText: '',
-            intensityText: INTENSITY_LABELS[todayData.template] || '标准'
+            intensityText: getIntensityLabel(todayData.template)
           });
           this.updateCurrentTemplate();
           this.calculateProgress();
@@ -324,7 +382,7 @@ Page({
       const dayData = allDays[date];
       recent7Days.push({
         date,
-        template: dayData?.template ? (INTENSITY_LABELS[dayData.template] || dayData.template) : '-',
+        template: dayData?.template ? getIntensityLabel(dayData.template) : '-',
         complete: dayData?.complete ? '✅' : '—'
       });
     });
@@ -366,13 +424,14 @@ Page({
   },
 
   generateShareText(dayData = this.data.todayData, streakValue = this.data.streak) {
-    const { today, streak, learningGoalText, intensityText } = this.data;
-    const checkedCount = Object.values(dayData.items || {}).filter(Boolean).length;
+    const { today, streak, learningGoalText, intensityText, config } = this.data;
+    const templateItems = config?.templates?.[dayData.template]?.items || [];
+    const checkedCount = countCheckedByItems(dayData.items, templateItems);
     const diary = (dayData.diary || '').trim();
     let text = `我今天完成了英语学习打卡！\n`;
     text += `日期：${today}\n`;
     text += `目标：${learningGoalText || '日常英语'}\n`;
-    text += `强度：${intensityText || INTENSITY_LABELS[dayData.template] || '标准'}\n`;
+    text += `强度：${intensityText || getIntensityLabel(dayData.template)}\n`;
     text += `任务：完成 ${checkedCount} 项\n`;
     text += `连续学习：${streakValue || streak} 天`;
     if (diary) {

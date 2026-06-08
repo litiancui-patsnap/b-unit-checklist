@@ -1,11 +1,7 @@
 const { getRecentDates } = require('./date.js');
 const { getAllDays, getConfig } = require('./storage.js');
-
-const INTENSITY_LABELS = {
-  A: '轻量',
-  B: '标准',
-  C: '强化'
-};
+const { countCheckedByItems } = require('./checklist.js');
+const { getGoalLabel, getIntensityLabel } = require('./defaultConfig.js');
 
 function generateExportText(onlyCompleted = false) {
   const dates = getRecentDates(30);
@@ -19,7 +15,7 @@ function generateExportText(onlyCompleted = false) {
   let text = '英语学习记录 / 周报\n';
   text += '='.repeat(40) + '\n\n';
   text += `学习目标：${getGoalLabel(config.learningGoal)}\n`;
-  text += `默认强度：${INTENSITY_LABELS[config.dailyIntensity] || '标准'}\n`;
+  text += `默认强度：${getIntensityLabel(config.dailyIntensity)}\n`;
   text += `本周完成：${weeklyCompletedCount}/7 天\n`;
   text += `本周英文日记：${weeklyDiaryCount} 句\n\n`;
   text += '最近30天记录\n';
@@ -44,17 +40,17 @@ function generateExportText(onlyCompleted = false) {
     }
 
     const template = dayData.template || '-';
-    const intensity = INTENSITY_LABELS[template] || template;
+    const intensity = template === '-' ? '-' : getIntensityLabel(template);
     const completeStatus = dayData.complete ? '✅' : '—';
 
     const startTotal = config.startChecklist.length;
-    const startChecked = Object.values(dayData.start || {}).filter(Boolean).length;
+    const startChecked = countCheckedByItems(dayData.start, config.startChecklist);
 
     let itemsTotal = 0;
     let itemsChecked = 0;
     if (template !== '-' && config.templates[template]) {
       itemsTotal = config.templates[template].items.length;
-      itemsChecked = Object.values(dayData.items || {}).filter(Boolean).length;
+      itemsChecked = countCheckedByItems(dayData.items, config.templates[template].items);
     }
 
     text += `${date}  强度:${intensity}  完成:${completeStatus}  准备:${startChecked}/${startTotal}  任务:${itemsChecked}/${itemsTotal}\n`;
@@ -76,17 +72,6 @@ function generateExportText(onlyCompleted = false) {
     totalCount,
     completedCount
   };
-}
-
-function getGoalLabel(goal) {
-  const labels = {
-    daily: '日常英语',
-    spoken: '口语表达',
-    cet: '四六级备考',
-    exam: '考研英语',
-    business: '职场英语'
-  };
-  return labels[goal] || '日常英语';
 }
 
 module.exports = {

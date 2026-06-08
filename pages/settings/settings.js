@@ -1,20 +1,21 @@
 const { getConfig, setConfig } = require('../../utils/storage.js');
-const { getDefaultConfig, generateId } = require('../../utils/defaultConfig.js');
+const {
+  CONFIG_VERSION,
+  DAILY_INTENSITIES,
+  LEARNING_GOALS,
+  getDefaultConfig,
+  getDiaryTemplates,
+  getTemplatesForGoal,
+  generateId
+} = require('../../utils/defaultConfig.js');
 
 Page({
   data: {
-    learningGoalOptions: [
-      { value: 'daily', label: '日常英语' },
-      { value: 'spoken', label: '口语表达' },
-      { value: 'cet', label: '四六级备考' },
-      { value: 'exam', label: '考研英语' },
-      { value: 'business', label: '职场英语' }
-    ],
-    dailyIntensityOptions: [
-      { value: 'A', label: '轻量：忙碌日也能完成' },
-      { value: 'B', label: '标准：每天 15-25 分钟' },
-      { value: 'C', label: '强化：系统训练英语能力' }
-    ],
+    learningGoalOptions: LEARNING_GOALS,
+    dailyIntensityOptions: DAILY_INTENSITIES.map(item => ({
+      ...item,
+      displayLabel: `${item.label}：${item.description}`
+    })),
     learningGoal: 'daily',
     dailyIntensity: 'B',
     learningGoalIndex: 0,
@@ -23,6 +24,7 @@ Page({
     templateA: null,
     templateB: null,
     templateC: null,
+    diaryTemplates: [],
     reminderEnabled: false,
     reminderTime: '21:30',
     config: null,
@@ -52,6 +54,7 @@ Page({
       templateA: JSON.parse(JSON.stringify(config.templates.A)),
       templateB: JSON.parse(JSON.stringify(config.templates.B)),
       templateC: JSON.parse(JSON.stringify(config.templates.C)),
+      diaryTemplates: JSON.parse(JSON.stringify(config.diaryTemplates || getDiaryTemplates(config.learningGoal))),
       reminderEnabled: config.reminder.enabled,
       reminderTime: config.reminder.time
     });
@@ -63,7 +66,8 @@ Page({
     if (option) {
       this.setData({
         learningGoal: option.value,
-        learningGoalIndex: index
+        learningGoalIndex: index,
+        diaryTemplates: getDiaryTemplates(option.value)
       });
     }
   },
@@ -191,8 +195,24 @@ Page({
     });
   },
 
+  applyGoalDefaults() {
+    const { learningGoal } = this.data;
+    const templates = getTemplatesForGoal(learningGoal);
+    this.setData({
+      templateA: templates.A,
+      templateB: templates.B,
+      templateC: templates.C,
+      diaryTemplates: getDiaryTemplates(learningGoal)
+    });
+
+    wx.showToast({
+      title: '已生成默认任务',
+      icon: 'success'
+    });
+  },
+
   saveConfig() {
-    const { learningGoal, dailyIntensity, startChecklist, templateA, templateB, templateC, reminderEnabled, reminderTime } = this.data;
+    const { learningGoal, dailyIntensity, startChecklist, templateA, templateB, templateC, diaryTemplates, reminderEnabled, reminderTime } = this.data;
 
     if (!startChecklist || startChecklist.length === 0) {
       wx.showToast({
@@ -292,9 +312,11 @@ Page({
 
     try {
       const newConfig = {
-        version: 'ENGLISH_LEARNING_V1',
+        version: CONFIG_VERSION,
+        hasOnboarded: true,
         learningGoal,
         dailyIntensity,
+        diaryTemplates,
         startChecklist,
         templates: {
           A: templateA,
@@ -335,7 +357,8 @@ Page({
       content: '将恢复默认英语学习任务,确定吗？',
       success: (res) => {
         if (res.confirm) {
-          const defaultConfig = getDefaultConfig();
+          const defaultConfig = getDefaultConfig(this.data.learningGoal, this.data.dailyIntensity);
+          defaultConfig.hasOnboarded = true;
           const success = setConfig(defaultConfig);
 
           if (success) {

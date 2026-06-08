@@ -30,10 +30,12 @@
 .stats-section {
   display: flex;
   justify-content: space-around;
+  gap: 8px;
 }
 
 .stat-item {
   text-align: center;
+  flex: 1;
 }
 
 .stat-label {
@@ -57,6 +59,58 @@
 .reminder-text {
   font-size: 14px;
   color: #ff9800;
+}
+
+.plan-summary {
+  padding: 14px;
+  border-radius: 8px;
+  background-color: #f7fbf7;
+  border: 1px solid #e4f1e4;
+}
+
+.plan-summary-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-summary-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #233323;
+}
+
+.plan-summary-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.module-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.module-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background-color: #f5f5f5;
+}
+
+.module-name {
+  font-size: 13px;
+  color: #333;
+  font-weight: 600;
+}
+
+.module-meta {
+  font-size: 12px;
+  color: #777;
 }
 
 .template-section {
@@ -134,9 +188,48 @@
   color: #333;
 }
 
+.task-content {
+  margin-left: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.task-meta {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.4;
+}
+
 .actions-section {
   display: flex;
   flex-direction: column;
+}
+
+.diary-template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.diary-template {
+  padding: 9px 10px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #365136;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.diary-template:active {
+  background-color: #edf6ed;
 }
 
 .diary-input {
