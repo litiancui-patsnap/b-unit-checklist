@@ -1,0 +1,9 @@
+{
+  "name": "ai-proxy",
+  "version": "1.0.0",
+  "description": "AI learning proxy for the English learning mini program",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

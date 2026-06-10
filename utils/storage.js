@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'B_UNIT_CHECKLIST_PRO_V1';
-const { getDefaultConfig } = require('./defaultConfig.js');
+const { getDefaultConfig, getDiaryTemplates, normalizeTaskItem } = require('./defaultConfig.js');
 
 function createDefaultData() {
   return {
@@ -36,9 +36,22 @@ function normalizeData(data) {
       reminder: {
         ...defaultData.config.reminder,
         ...(normalized.config.reminder || {})
+      },
+      aiService: {
+        ...defaultData.config.aiService,
+        ...(normalized.config.aiService || {})
       }
     };
   }
+
+  normalized.config.diaryTemplates = normalized.config.diaryTemplates || getDiaryTemplates(normalized.config.learningGoal);
+  ['A', 'B', 'C'].forEach(key => {
+    const template = normalized.config.templates[key] || defaultData.config.templates[key];
+    normalized.config.templates[key] = {
+      ...template,
+      items: (template.items || []).map(normalizeTaskItem)
+    };
+  });
 
   return normalized;
 }

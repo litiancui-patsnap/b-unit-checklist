@@ -1,4 +1,4 @@
-const CONFIG_VERSION = 'ENGLISH_LEARNING_V2';
+const CONFIG_VERSION = 'ENGLISH_LEARNING_V3';
 
 const LEARNING_GOALS = [
   { value: 'daily', label: '日常英语', description: '每天保持英语输入和输出' },
@@ -12,6 +12,14 @@ const DAILY_INTENSITIES = [
   { value: 'A', label: '轻量', description: '忙碌日也能完成', minutes: 5 },
   { value: 'B', label: '标准', description: '每天 15-25 分钟', minutes: 18 },
   { value: 'C', label: '强化', description: '系统训练英语能力', minutes: 35 }
+];
+
+const TASK_TYPES = [
+  { value: 'word', label: '单词' },
+  { value: 'listen', label: '听力' },
+  { value: 'speak', label: '口语' },
+  { value: 'read', label: '阅读' },
+  { value: 'write', label: '写作' }
 ];
 
 const GOAL_TASKS = {
@@ -72,7 +80,7 @@ const GOAL_TASKS = {
       task('listen', '听力', '完成 1 组听力训练', 12),
       task('read', '阅读', '完成 1 篇阅读训练', 15),
       task('write', '写作', '仿写 3 句作文表达', 8),
-      task('review', '复盘', '整理今日错因', 5)
+      task('write', '复盘', '整理今日错因', 5)
     ]
   },
   exam: {
@@ -84,15 +92,15 @@ const GOAL_TASKS = {
     B: [
       task('word', '词汇', '背 30 个考研核心词', 8),
       task('read', '长难句', '拆解 2 个长难句', 10),
-      task('translate', '翻译', '翻译 2 句英文', 6),
+      task('write', '翻译', '翻译 2 句英文', 6),
       task('write', '输出', '写 1 句同义改写', 4)
     ],
     C: [
       task('word', '词汇', '背 50 个考研核心词并复盘错词', 14),
       task('read', '长难句', '拆解 4 个长难句', 16),
-      task('translate', '翻译', '翻译 1 段英文', 12),
+      task('write', '翻译', '翻译 1 段英文', 12),
       task('read', '阅读', '精读 1 段真题材料', 12),
-      task('review', '复盘', '整理 3 个表达或错因', 6)
+      task('write', '复盘', '整理 3 个表达或错因', 6)
     ]
   },
   business: {
@@ -112,7 +120,7 @@ const GOAL_TASKS = {
       task('listen', '听力', '精听 12 分钟职场英语音频', 12),
       task('speak', '口语', '模拟 1 段会议发言', 10),
       task('write', '写作', '写 3 句英文邮件内容', 10),
-      task('review', '复盘', '整理 3 个可复用表达', 5)
+      task('write', '复盘', '整理 3 个可复用表达', 5)
     ]
   }
 };
@@ -142,6 +150,33 @@ function getIntensityLabel(intensity) {
   return option ? option.label : DAILY_INTENSITIES[1].label;
 }
 
+function getTaskTypeLabel(type) {
+  const option = TASK_TYPES.find(item => item.value === type);
+  return option ? option.label : TASK_TYPES[0].label;
+}
+
+function normalizeTaskType(type) {
+  if (TASK_TYPES.some(item => item.value === type)) {
+    return type;
+  }
+
+  if (type === 'translate' || type === 'review') {
+    return 'write';
+  }
+
+  return 'word';
+}
+
+function normalizeTaskItem(item = {}) {
+  const type = normalizeTaskType(item.type);
+  return {
+    ...item,
+    type,
+    module: item.module || getTaskTypeLabel(type),
+    minutes: Number(item.minutes || 0)
+  };
+}
+
 function getTemplatesForGoal(goal = 'daily') {
   const goalTasks = GOAL_TASKS[goal] || GOAL_TASKS.daily;
   return {
@@ -169,6 +204,17 @@ function getDefaultConfig(goal = 'daily', dailyIntensity = 'B') {
     hasOnboarded: false,
     learningGoal: goal,
     dailyIntensity,
+    aiService: {
+      enabled: true,
+      mode: 'cloud',
+      cloudFunctionName: 'aiProxy',
+      baseUrl: '',
+      provider: 'qwen',
+      dictionaryPath: '/dictionary/lookup',
+      ttsPath: '/speech/tts',
+      contentPath: '/learning/content',
+      planPath: '/learning/plan'
+    },
     diaryTemplates: getDiaryTemplates(goal),
     startChecklist: [
       { id: generateId('prep_1'), text: '准备好单词本或学习 App' },
@@ -203,10 +249,14 @@ module.exports = {
   CONFIG_VERSION,
   DAILY_INTENSITIES,
   LEARNING_GOALS,
+  TASK_TYPES,
   getDefaultConfig,
   getDiaryTemplates,
   getGoalLabel,
   getIntensityLabel,
+  getTaskTypeLabel,
   getTemplatesForGoal,
+  normalizeTaskItem,
+  normalizeTaskType,
   generateId
 };

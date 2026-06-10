@@ -23,6 +23,49 @@
     <button class="btn-default" bindtap="applyGoalDefaults">按当前目标生成默认任务</button>
   </view>
 
+  <!-- AI 服务设置 -->
+  <view class="section">
+    <view class="section-title">AI / 词典 / 发音服务</view>
+    <view class="reminder-row">
+      <view class="option-info">
+        <text class="reminder-label">启用服务端代理</text>
+        <text class="option-desc">用于千问内容生成、有道词典补全和 TTS 发音</text>
+      </view>
+      <switch checked="{{ aiService.enabled }}" bindchange="onAIServiceSwitch" color="#1AAD19" />
+    </view>
+    <view class="service-field">
+      <text class="service-label">调用方式</text>
+      <picker mode="selector" range="{{ ['微信云函数', 'HTTP代理'] }}" value="{{ aiService.mode === 'http' ? 1 : 0 }}" bindchange="onAIServiceModeChange">
+        <view class="service-input word-picker">{{ aiService.mode === 'http' ? 'HTTP代理' : '微信云函数' }}</view>
+      </picker>
+    </view>
+    <view class="service-field">
+      <text class="service-label">云函数名</text>
+      <input class="service-input" value="{{ aiService.cloudFunctionName }}" bindinput="onAIServiceInput" data-field="cloudFunctionName" placeholder="aiProxy" />
+    </view>
+    <view class="service-field">
+      <text class="service-label">服务地址</text>
+      <input class="service-input" value="{{ aiService.baseUrl }}" bindinput="onAIServiceInput" data-field="baseUrl" placeholder="https://你的域名/api" />
+    </view>
+    <view class="service-field">
+      <text class="service-label">提供方</text>
+      <input class="service-input" value="{{ aiService.provider }}" bindinput="onAIServiceInput" data-field="provider" placeholder="qwen" />
+    </view>
+    <view class="service-grid">
+      <input class="service-input" value="{{ aiService.dictionaryPath }}" bindinput="onAIServiceInput" data-field="dictionaryPath" placeholder="/dictionary/lookup" />
+      <input class="service-input" value="{{ aiService.ttsPath }}" bindinput="onAIServiceInput" data-field="ttsPath" placeholder="/speech/tts" />
+      <input class="service-input" value="{{ aiService.contentPath }}" bindinput="onAIServiceInput" data-field="contentPath" placeholder="/learning/content" />
+      <input class="service-input" value="{{ aiService.planPath }}" bindinput="onAIServiceInput" data-field="planPath" placeholder="/learning/plan" />
+    </view>
+    <view class="reminder-notice service-notice">
+      <view class="notice-title">接入说明</view>
+      <view class="notice-content">
+        <text class="notice-text">小程序只保存你的代理地址，不保存千问或有道密钥</text>
+        <text class="notice-text">未配置服务时，会使用内置单词和离线学习内容</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 学习前准备配置 -->
   <view class="section">
     <view class="section-title">学习前准备</view>
@@ -45,7 +88,17 @@
     </view>
     <view class="config-items">
       <view class="config-item" wx:for="{{ templateA.items }}" wx:key="id">
-        <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="A" data-id="{{ item.id }}" placeholder="输入英语任务" />
+        <view class="task-config-main">
+          <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="A" data-id="{{ item.id }}" placeholder="输入英语任务" />
+          <view class="task-config-meta">
+            <picker mode="selector" range="{{ taskTypeOptions }}" range-key="label" value="{{ item.typeIndex }}" bindchange="onTemplateTypeChange" data-template="A" data-id="{{ item.id }}">
+              <view class="meta-picker">{{ taskTypeOptions[item.typeIndex].label }}</view>
+            </picker>
+            <input class="meta-input" value="{{ item.module }}" bindinput="onTemplateModuleInput" data-template="A" data-id="{{ item.id }}" placeholder="模块名" />
+            <input class="minutes-input" type="number" value="{{ item.minutes }}" bindinput="onTemplateMinutesInput" data-template="A" data-id="{{ item.id }}" />
+            <text class="minutes-unit">分</text>
+          </view>
+        </view>
         <button class="btn-delete" bindtap="deleteTemplateItem" data-template="A" data-id="{{ item.id }}">删除</button>
       </view>
     </view>
@@ -62,7 +115,17 @@
     </view>
     <view class="config-items">
       <view class="config-item" wx:for="{{ templateB.items }}" wx:key="id">
-        <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="B" data-id="{{ item.id }}" placeholder="输入英语任务" />
+        <view class="task-config-main">
+          <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="B" data-id="{{ item.id }}" placeholder="输入英语任务" />
+          <view class="task-config-meta">
+            <picker mode="selector" range="{{ taskTypeOptions }}" range-key="label" value="{{ item.typeIndex }}" bindchange="onTemplateTypeChange" data-template="B" data-id="{{ item.id }}">
+              <view class="meta-picker">{{ taskTypeOptions[item.typeIndex].label }}</view>
+            </picker>
+            <input class="meta-input" value="{{ item.module }}" bindinput="onTemplateModuleInput" data-template="B" data-id="{{ item.id }}" placeholder="模块名" />
+            <input class="minutes-input" type="number" value="{{ item.minutes }}" bindinput="onTemplateMinutesInput" data-template="B" data-id="{{ item.id }}" />
+            <text class="minutes-unit">分</text>
+          </view>
+        </view>
         <button class="btn-delete" bindtap="deleteTemplateItem" data-template="B" data-id="{{ item.id }}">删除</button>
       </view>
     </view>
@@ -79,7 +142,17 @@
     </view>
     <view class="config-items">
       <view class="config-item" wx:for="{{ templateC.items }}" wx:key="id">
-        <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="C" data-id="{{ item.id }}" placeholder="输入英语任务" />
+        <view class="task-config-main">
+          <input class="config-input" value="{{ item.text }}" bindinput="onTemplateInput" data-template="C" data-id="{{ item.id }}" placeholder="输入英语任务" />
+          <view class="task-config-meta">
+            <picker mode="selector" range="{{ taskTypeOptions }}" range-key="label" value="{{ item.typeIndex }}" bindchange="onTemplateTypeChange" data-template="C" data-id="{{ item.id }}">
+              <view class="meta-picker">{{ taskTypeOptions[item.typeIndex].label }}</view>
+            </picker>
+            <input class="meta-input" value="{{ item.module }}" bindinput="onTemplateModuleInput" data-template="C" data-id="{{ item.id }}" placeholder="模块名" />
+            <input class="minutes-input" type="number" value="{{ item.minutes }}" bindinput="onTemplateMinutesInput" data-template="C" data-id="{{ item.id }}" />
+            <text class="minutes-unit">分</text>
+          </view>
+        </view>
         <button class="btn-delete" bindtap="deleteTemplateItem" data-template="C" data-id="{{ item.id }}">删除</button>
       </view>
     </view>

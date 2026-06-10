@@ -10,6 +10,7 @@ dist/
 # 临时文件
 *.log
 *.tmp
+assets/speech/
 
 # 用户数据
 miniprogram_npm/
