@@ -2,11 +2,74 @@
   margin-bottom: 10px;
 }
 
+.option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  padding-right: 12px;
+}
+
+.option-desc {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.5;
+}
+
 .config-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 10px;
   gap: 10px;
+}
+
+.task-config-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-config-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.meta-picker {
+  min-width: 42px;
+  padding: 6px 8px;
+  border: 1px solid #dfe5df;
+  border-radius: 6px;
+  color: #1AAD19;
+  font-size: 12px;
+  text-align: center;
+  background-color: #fff;
+}
+
+.meta-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 7px 8px;
+  font-size: 12px;
+  background-color: #fafafa;
+}
+
+.minutes-input {
+  width: 42px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 7px 6px;
+  font-size: 12px;
+  text-align: center;
+  background-color: #fafafa;
+}
+
+.minutes-unit {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #777;
 }
 
 .config-input {
@@ -86,6 +149,51 @@
   padding: 5px 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  text-align: right;
+}
+
+.diary-template-preview {
+  padding: 9px 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #365136;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.service-field {
+  margin-top: 12px;
+}
+
+.service-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.service-input {
+  width: 100%;
+  min-height: 38px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  background-color: #fafafa;
+  box-sizing: border-box;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.service-notice {
+  margin-top: 12px;
 }
 
 /* 提醒说明 */
@@ -126,7 +234,7 @@
   border-radius: 6px;
 }
 
-/* 备考方法指引样式 */
+/* 学习方法指引样式 */
 .collapsible {
   display: flex;
   justify-content: space-between;

@@ -2,7 +2,8 @@
   <!-- 日期与完成状态 -->
   <view class="section date-section">
     <view class="date-display">{{ today }}</view>
-    <view class="complete-badge" wx:if="{{ todayData.complete }}">今日完成 ✅</view>
+    <view class="goal-display">{{ learningGoalText }} · {{ intensityText }}强度</view>
+    <view class="complete-badge" wx:if="{{ todayData.complete }}">今日英语完成 ✅</view>
   </view>
 
   <!-- 统计区 -->
@@ -12,29 +13,59 @@
       <text class="stat-value">{{ progress }}%</text>
     </view>
     <view class="stat-item">
-      <text class="stat-label">连续打卡</text>
+      <text class="stat-label">预计用时</text>
+      <text class="stat-value">{{ planTotalMinutes }}分</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-label">连续学习</text>
       <text class="stat-value">{{ streak }}天</text>
     </view>
   </view>
 
   <!-- 提醒状态 -->
   <view class="section reminder-section" wx:if="{{ reminderEnabled }}">
-    <text class="reminder-text">⏰ 提醒已开启: {{ reminderTime }}</text>
+    <text class="reminder-text">⏰ 英语学习提醒: {{ reminderTime }}</text>
   </view>
 
-  <!-- 模板选择 -->
-  <view class="section template-section">
-    <view class="section-title">选择今日疲劳模板</view>
-    <view class="template-buttons">
-      <view class="template-btn {{ todayData.template === 'A' ? 'active' : '' }}" bindtap="selectTemplate" data-template="A">A</view>
-      <view class="template-btn {{ todayData.template === 'B' ? 'active' : '' }}" bindtap="selectTemplate" data-template="B">B</view>
-      <view class="template-btn {{ todayData.template === 'C' ? 'active' : '' }}" bindtap="selectTemplate" data-template="C">C</view>
+  <!-- 今日计划概览 -->
+  <view class="section plan-summary-section">
+    <view class="section-title">今日学习计划</view>
+    <view class="plan-summary">
+      <view class="plan-summary-main">
+        <text class="plan-summary-title">{{ learningGoalText }} · {{ intensityText }}</text>
+        <text class="plan-summary-desc">完成 {{ planRequiredCount }} 项即可打卡，预计 {{ planTotalMinutes }} 分钟</text>
+      </view>
+    </view>
+    <view class="module-list" wx:if="{{ planModules.length > 0 }}">
+      <view class="module-chip" wx:for="{{ planModules }}" wx:key="name">
+        <text class="module-name">{{ item.name }}</text>
+        <text class="module-meta">{{ item.count }}项 · {{ item.minutes }}分</text>
+      </view>
     </view>
   </view>
 
-  <!-- 启动流程清单 -->
+  <!-- 强度选择 -->
+  <view class="section template-section">
+    <view class="section-title">切换今日强度</view>
+    <view class="template-buttons">
+      <view class="template-btn {{ todayData.template === 'A' ? 'active' : '' }}" bindtap="selectTemplate" data-template="A">
+        <text class="template-letter">A</text>
+        <text class="template-name">轻量</text>
+      </view>
+      <view class="template-btn {{ todayData.template === 'B' ? 'active' : '' }}" bindtap="selectTemplate" data-template="B">
+        <text class="template-letter">B</text>
+        <text class="template-name">标准</text>
+      </view>
+      <view class="template-btn {{ todayData.template === 'C' ? 'active' : '' }}" bindtap="selectTemplate" data-template="C">
+        <text class="template-letter">C</text>
+        <text class="template-name">强化</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 学习前准备 -->
   <view class="section checklist-section">
-    <view class="section-title">启动流程</view>
+    <view class="section-title">学习前准备</view>
     <view class="checklist-items" wx:if="{{ startChecklist.length > 0 }}">
       <view class="checklist-item" wx:for="{{ startChecklist }}" wx:key="id">
         <checkbox checked="{{ todayData.start[item.id] || false }}" bindtap="toggleStart" data-id="{{ item.id }}" />
@@ -42,34 +73,225 @@
       </view>
     </view>
     <view class="empty-state" wx:else>
-      <text class="empty-text">暂无启动流程，请到设置页添加</text>
+      <text class="empty-text">暂无学习前准备，请到设置页添加</text>
     </view>
   </view>
 
-  <!-- 模板清单 -->
+  <!-- 今日英语任务 -->
   <view class="section checklist-section" wx:if="{{ currentTemplate }}">
     <view class="section-title">{{ currentTemplate.title }}</view>
     <view class="checklist-items" wx:if="{{ currentTemplate.items.length > 0 }}">
       <view class="checklist-item" wx:for="{{ currentTemplate.items }}" wx:key="id">
         <checkbox checked="{{ todayData.items[item.id] || false }}" bindtap="toggleItem" data-id="{{ item.id }}" />
-        <text class="item-text">{{ item.text }}</text>
+        <view class="task-content">
+          <view class="task-title">{{ item.text }}</view>
+          <view class="task-meta">
+            <text>{{ item.typeLabel || '单词' }} · {{ item.module || '任务' }}</text>
+            <text wx:if="{{ item.minutes }}"> · {{ item.minutes }} 分钟</text>
+            <text wx:if="{{ item.type === 'word' }}"> · 今日单词 {{ todayData.words.length }}/10</text>
+          </view>
+        </view>
       </view>
     </view>
     <view class="empty-state" wx:else>
-      <text class="empty-text">当前模板无内容，请到设置页添加</text>
+      <text class="empty-text">当前强度暂无任务，请到设置页添加</text>
     </view>
+  </view>
+
+  <!-- 今日内容输入 -->
+  <view class="section content-section" wx:if="{{ dailyContent }}">
+    <view class="section-header-row">
+      <view class="section-title">今日输入</view>
+      <view class="source-badge">{{ contentSourceText }}</view>
+    </view>
+    <view class="content-card">
+      <view class="content-card-head">
+        <text class="content-label">每日一句</text>
+        <button class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.sentence }}">🔊</button>
+      </view>
+      <view class="content-text strong">{{ dailyContent.sentence }}</view>
+      <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="sentence" data-type="listen">{{ todayData.contentChecks.sentence ? '已完成' : '完成听读' }}</button>
+    </view>
+    <view class="content-card">
+      <view class="content-card-head">
+        <text class="content-label">每日短文</text>
+        <button class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.shortReading }}">🔊</button>
+      </view>
+      <view class="content-text">{{ dailyContent.shortReading }}</view>
+      <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="shortReading" data-type="read">{{ todayData.contentChecks.shortReading ? '已阅读' : '完成阅读' }}</button>
+    </view>
+    <view class="content-card">
+      <view class="content-card-head">
+        <text class="content-label">场景表达</text>
+        <button class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.sceneExpression }}">🔊</button>
+      </view>
+      <view class="content-text strong">{{ dailyContent.sceneExpression }}</view>
+      <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="sceneExpression" data-type="speak">{{ todayData.contentChecks.sceneExpression ? '已跟读' : '完成跟读' }}</button>
+    </view>
+    <view class="content-card">
+      <view class="content-card-head">
+        <text class="content-label">长难句拆解</text>
+        <button class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.longSentence }}">🔊</button>
+      </view>
+      <view class="content-text">{{ dailyContent.longSentence }}</view>
+      <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="longSentence" data-type="read">{{ todayData.contentChecks.longSentence ? '已拆解' : '完成拆解' }}</button>
+    </view>
+    <button class="btn-default" bindtap="refreshDailyContent">{{ aiBusy ? '生成中...' : '刷新今日内容' }}</button>
+  </view>
+
+  <!-- 今日单词本 -->
+  <view class="section wordbook-section">
+    <view class="section-title">今日单词本</view>
+    <view class="wordbook-summary">
+      <text class="summary-text">今日 {{ todayData.words.length }}/10 个，建议 3-10 个</text>
+      <text class="summary-text">到期复习 {{ reviewQueue.length }} 个</text>
+    </view>
+    <view class="word-input-grid">
+      <input class="word-input" value="{{ wordDraft.term }}" bindinput="onWordDraftInput" data-field="term" placeholder="英文 / 短语" />
+      <input class="word-input" value="{{ wordDraft.phonetic }}" bindinput="onWordDraftInput" data-field="phonetic" placeholder="音标，可选" />
+      <input class="word-input" value="{{ wordDraft.translation }}" bindinput="onWordDraftInput" data-field="translation" placeholder="中文含义" />
+      <picker mode="selector" range="{{ wordCategoryOptions }}" range-key="label" value="{{ wordCategoryIndex }}" bindchange="onWordCategoryChange">
+        <view class="word-input word-picker">{{ wordCategoryOptions[wordCategoryIndex].label }}</view>
+      </picker>
+      <input class="word-input word-input-full" value="{{ wordDraft.example }}" bindinput="onWordDraftInput" data-field="example" placeholder="例句，可选" />
+    </view>
+    <view class="word-action-row">
+      <button class="btn-default compact-btn" bindtap="lookupWordDraft">{{ aiBusy ? '补全中...' : 'AI/词典补全' }}</button>
+      <button class="btn-default compact-btn" bindtap="addRecommendedWords">{{ aiBusy ? '推荐中...' : '推荐今日单词' }}</button>
+    </view>
+    <button class="btn-default" bindtap="addWord">添加到今日单词本</button>
+
+    <view class="word-list" wx:if="{{ todayData.words.length > 0 }}">
+      <view class="word-card" wx:for="{{ todayData.words }}" wx:key="id" wx:for-item="word">
+        <view class="word-main">
+          <view class="word-title-row">
+            <text class="word-term">{{ word.term }}</text>
+            <button class="sound-btn" bindtap="playPronunciation" data-text="{{ word.term }}" data-src="{{ word.audioSrc }}">🔊</button>
+          </view>
+          <text class="word-status">{{ word.statusLabel }}</text>
+        </view>
+        <view class="word-meta-row">
+          <text class="word-phonetic" wx:if="{{ word.phonetic }}">{{ word.phonetic }}</text>
+          <text class="word-category">{{ word.categoryLabel }}</text>
+          <text class="word-source">{{ word.source === 'manual' ? '手动' : 'AI/词典' }}</text>
+        </view>
+        <text class="word-translation">{{ word.translation }}</text>
+        <text class="word-example" wx:if="{{ word.example }}">{{ word.example }}</text>
+        <view class="word-actions">
+          <button class="mini-btn" wx:for="{{ wordStatusOptions }}" wx:key="value" wx:for-item="status" bindtap="setWordStatus" data-id="{{ word.id }}" data-status="{{ status.value }}">{{ status.label }}</button>
+          <button class="mini-btn danger" bindtap="deleteWord" data-id="{{ word.id }}">删除</button>
+        </view>
+      </view>
+    </view>
+    <view class="empty-state compact" wx:else>
+      <text class="empty-text">添加今天遇到的单词或短语，后续会进入复习队列</text>
+    </view>
+  </view>
+
+  <!-- 复习提醒队列 -->
+  <view class="section review-section">
+    <view class="section-title">复习提醒队列</view>
+    <view class="review-list" wx:if="{{ reviewQueue.length > 0 }}">
+      <view class="review-card" wx:for="{{ reviewQueue }}" wx:key="id" wx:for-item="word">
+        <view class="word-main">
+          <view class="word-title-row">
+            <text class="word-term">{{ word.term }}</text>
+            <button class="sound-btn" bindtap="playPronunciation" data-text="{{ word.term }}" data-src="{{ word.audioSrc }}">🔊</button>
+          </view>
+          <text class="word-status">{{ word.sourceDate }}</text>
+        </view>
+        <view class="word-meta-row">
+          <text class="word-phonetic" wx:if="{{ word.phonetic }}">{{ word.phonetic }}</text>
+          <text class="word-category">{{ word.categoryLabel }}</text>
+        </view>
+        <text class="word-translation">{{ word.translation }}</text>
+        <view class="word-actions">
+          <button class="mini-btn" bindtap="markReviewWord" data-date="{{ word.sourceDate }}" data-id="{{ word.id }}" data-mastered="false">已复习</button>
+          <button class="mini-btn primary" bindtap="markReviewWord" data-date="{{ word.sourceDate }}" data-id="{{ word.id }}" data-mastered="true">已掌握</button>
+        </view>
+      </view>
+    </view>
+    <view class="empty-state compact" wx:else>
+      <text class="empty-text">暂无到期复习词</text>
+    </view>
+  </view>
+
+  <!-- 场景口语模板 -->
+  <view class="section speaking-section">
+    <view class="section-title">场景口语模板</view>
+    <view class="scene-summary">
+      <text class="summary-text">已跟读 {{ sceneStats.completedLines }}/{{ sceneStats.totalLines }} 句</text>
+    </view>
+    <view class="scene-card" wx:for="{{ sceneTemplates }}" wx:key="id" wx:for-item="scene">
+      <view class="scene-title">{{ scene.title }}</view>
+      <view class="scene-line" wx:for="{{ scene.lines }}" wx:key="id" wx:for-item="line">
+        <checkbox checked="{{ line.checked }}" bindtap="toggleSceneLine" data-scene="{{ scene.id }}" data-line="{{ line.id }}" />
+        <text class="scene-text">{{ line.text }}</text>
+        <button class="sound-btn scene-sound-btn" bindtap="playPronunciation" data-text="{{ line.audioText }}" data-src="{{ line.audioSrc }}">🔊</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 单词小测 -->
+  <view class="section quiz-section">
+    <view class="section-title">单词四选一小测</view>
+    <view wx:if="{{ quizQuestions.length > 0 }}">
+      <view class="quiz-summary">
+        <text class="summary-text">完成后会自动计入一个单词任务</text>
+        <text class="summary-text">得分 {{ quizResult.score }}/{{ quizResult.total }}</text>
+      </view>
+      <view class="quiz-card" wx:for="{{ quizQuestions }}" wx:key="id" wx:for-item="question">
+        <view class="quiz-prompt">{{ question.prompt }}</view>
+        <view class="quiz-options">
+          <button
+            class="quiz-option {{ todayData.quiz.answers[question.id] === option ? 'selected' : '' }} {{ todayData.quiz.answers[question.id] && question.answer === option ? 'correct' : '' }}"
+            wx:for="{{ question.options }}"
+            wx:key="*this"
+            wx:for-item="option"
+            bindtap="answerQuiz"
+            data-question="{{ question.id }}"
+            data-option="{{ option }}"
+          >{{ option }}</button>
+        </view>
+      </view>
+    </view>
+    <view class="empty-state compact" wx:else>
+      <text class="empty-text">至少添加 2 个带中文含义的单词后生成小测</text>
+    </view>
+  </view>
+
+  <!-- 英文日记 -->
+  <view class="section diary-section">
+    <view class="section-title">英文日记一句话</view>
+    <view class="diary-template-list" wx:if="{{ diaryTemplates.length > 0 }}">
+      <view class="diary-template" wx:for="{{ diaryTemplates }}" wx:key="id" bindtap="useDiaryTemplate" data-template="{{ item.text }}">
+        <text class="diary-template-text">{{ item.text }}</text>
+        <button class="sound-btn diary-sound-btn" catchtap="playPronunciation" data-text="{{ item.audioText }}" data-src="{{ item.audioSrc }}">🔊</button>
+      </view>
+    </view>
+    <textarea class="diary-input" value="{{ todayData.diary }}" bindinput="onDiaryInput" bindblur="saveDiary" maxlength="200" placeholder="Write one sentence in English today." show-confirm-bar="{{ false }}" />
+    <view class="diary-hint">写一句就算数，例如：I learned English for 15 minutes today.</view>
   </view>
 
   <!-- 操作按钮 -->
   <view class="section actions-section">
-    <button class="btn-primary" wx:if="{{ !todayData.complete }}" bindtap="completeToday">完成今日</button>
+    <button class="btn-primary" wx:if="{{ !todayData.complete }}" bindtap="completeToday">完成今日英语</button>
+    <view class="rescue-hint" wx:if="{{ !todayData.complete && todayData.template !== 'A' }}">未达当前强度时，达到轻量阈值可用补救完成保留连续学习</view>
     <button class="btn-default" wx:if="{{ todayData.complete }}" bindtap="uncompleteToday">取消完成</button>
+    <view class="rescue-hint" wx:if="{{ todayData.rescue.enabled }}">今天已按轻量补救完成</view>
     <button class="btn-danger" bindtap="resetToday">重置今天</button>
+  </view>
+
+  <!-- 分享文案 -->
+  <view class="section share-section" wx:if="{{ shareText }}">
+    <view class="section-title">打卡分享文案</view>
+    <textarea class="share-textarea" value="{{ shareText }}" disabled maxlength="-1" show-confirm-bar="{{ false }}" />
+    <button class="btn-primary" bindtap="copyShareText">复制分享文案</button>
   </view>
 
   <!-- 最近7天 -->
   <view class="section recent-section">
-    <view class="section-title">最近7天</view>
+    <view class="section-title">最近7天学习</view>
     <view class="recent-list">
       <view class="recent-item" wx:for="{{ recent7Days }}" wx:key="date">
         <text class="recent-date">{{ item.date }}</text>

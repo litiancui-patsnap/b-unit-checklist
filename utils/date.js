@@ -19,6 +19,12 @@ function getDateBefore(days) {
   return formatDate(date);
 }
 
+function getDateAfter(dateStr, days) {
+  const date = dateStr ? new Date(`${dateStr}T00:00:00`) : new Date();
+  date.setDate(date.getDate() + days);
+  return formatDate(date);
+}
+
 function getRecentDates(count) {
   const dates = [];
   for (let i = 0; i < count; i++) {
@@ -47,6 +53,7 @@ module.exports = {
   getToday,
   getTodayDate,
   getDateBefore,
+  getDateAfter,
   getRecentDates,
   parseTime,
   isTimeAfter
