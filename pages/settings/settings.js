@@ -12,8 +12,24 @@ const {
   normalizeTaskItem
 } = require('../../utils/defaultConfig.js');
 
+function getAIServiceStatus(service = {}) {
+  const hasRoute = service.mode === 'cloud' || Boolean(String(service.baseUrl || '').trim());
+  if (service.enabled && hasRoute) {
+    return {
+      text: '已启用',
+      className: 'enabled'
+    };
+  }
+
+  return {
+    text: '未连接，当前使用本地内容',
+    className: 'offline'
+  };
+}
+
 Page({
   data: {
+    configVersion: CONFIG_VERSION,
     learningGoalOptions: LEARNING_GOALS,
     dailyIntensityOptions: DAILY_INTENSITIES.map(item => ({
       ...item,
@@ -43,6 +59,10 @@ Page({
       planPath: '/learning/plan'
     },
     config: null,
+    showDeveloperSettings: false,
+    versionTapCount: 0,
+    aiServiceStatusText: '已启用',
+    aiServiceStatusClass: 'enabled',
     showMethodGuide: false
   },
 
@@ -59,6 +79,9 @@ Page({
     const learningGoalIndex = this.data.learningGoalOptions.findIndex(item => item.value === config.learningGoal);
     const dailyIntensityIndex = this.data.dailyIntensityOptions.findIndex(item => item.value === config.dailyIntensity);
 
+    const aiService = JSON.parse(JSON.stringify(config.aiService || {}));
+    const status = getAIServiceStatus(aiService);
+
     this.setData({
       config,
       learningGoal: config.learningGoal || 'daily',
@@ -72,7 +95,17 @@ Page({
       diaryTemplates: JSON.parse(JSON.stringify(config.diaryTemplates || getDiaryTemplates(config.learningGoal))),
       reminderEnabled: config.reminder.enabled,
       reminderTime: config.reminder.time,
-      aiService: JSON.parse(JSON.stringify(config.aiService || {}))
+      aiService,
+      aiServiceStatusText: status.text,
+      aiServiceStatusClass: status.className
+    });
+  },
+
+  refreshAIServiceStatus(aiService = this.data.aiService) {
+    const status = getAIServiceStatus(aiService);
+    this.setData({
+      aiServiceStatusText: status.text,
+      aiServiceStatusClass: status.className
     });
   },
 
@@ -286,23 +319,61 @@ Page({
   },
 
   onAIServiceSwitch(e) {
+    const aiService = {
+      ...this.data.aiService,
+      enabled: e.detail.value
+    };
     this.setData({
-      'aiService.enabled': e.detail.value
+      aiService
     });
+    this.refreshAIServiceStatus(aiService);
   },
 
   onAIServiceInput(e) {
     const field = e.currentTarget.dataset.field;
+    const aiService = {
+      ...this.data.aiService,
+      [field]: e.detail.value
+    };
     this.setData({
-      [`aiService.${field}`]: e.detail.value
+      aiService
     });
+    this.refreshAIServiceStatus(aiService);
   },
 
   onAIServiceModeChange(e) {
     const modes = ['cloud', 'http'];
     const mode = modes[Number(e.detail.value)] || 'cloud';
+    const aiService = {
+      ...this.data.aiService,
+      mode
+    };
     this.setData({
-      'aiService.mode': mode
+      aiService
+    });
+    this.refreshAIServiceStatus(aiService);
+  },
+
+  onVersionTap() {
+    if (this.data.showDeveloperSettings) {
+      return;
+    }
+
+    const nextCount = this.data.versionTapCount + 1;
+    if (nextCount >= 5) {
+      this.setData({
+        showDeveloperSettings: true,
+        versionTapCount: 0
+      });
+      wx.showToast({
+        title: '已进入开发者设置',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.setData({
+      versionTapCount: nextCount
     });
   },
 

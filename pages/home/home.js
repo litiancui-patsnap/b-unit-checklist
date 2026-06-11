@@ -89,6 +89,8 @@ Page({
     intensityText: '',
     planTotalMinutes: 0,
     planRequiredCount: 0,
+    planCompletedCount: 0,
+    planTotalCount: 0,
     planModules: [],
     diaryTemplates: [],
     wordDraft: {
@@ -273,6 +275,8 @@ Page({
         currentTemplate: null,
         planTotalMinutes: 0,
         planRequiredCount: 0,
+        planCompletedCount: 0,
+        planTotalCount: 0,
         planModules: []
       });
     }
@@ -300,6 +304,7 @@ Page({
     return {
       planTotalMinutes: items.reduce((sum, item) => sum + Number(item.minutes || 0), 0),
       planRequiredCount: template?.threshold || 0,
+      planTotalCount: items.length,
       planModules: modules
     };
   },
@@ -804,19 +809,18 @@ Page({
   },
 
   calculateProgress() {
-    const { todayData, startChecklist, currentTemplate } = this.data;
+    const { todayData, currentTemplate } = this.data;
 
-    let totalItems = startChecklist.length;
-    let checkedItems = countCheckedByItems(todayData.start, startChecklist);
-
-    if (currentTemplate) {
-      totalItems += currentTemplate.items.length;
-      checkedItems += countCheckedByItems(todayData.items, currentTemplate.items);
-    }
+    const totalItems = currentTemplate?.items?.length || 0;
+    const checkedItems = currentTemplate ? countCheckedByItems(todayData.items, currentTemplate.items) : 0;
 
     const progress = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
 
-    this.setData({ progress });
+    this.setData({
+      progress,
+      planCompletedCount: checkedItems,
+      planTotalCount: totalItems
+    });
   },
 
   completeToday() {

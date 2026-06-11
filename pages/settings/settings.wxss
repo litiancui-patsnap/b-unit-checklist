@@ -162,6 +162,48 @@
   line-height: 1.5;
 }
 
+.service-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 4px;
+}
+
+.service-status-label {
+  flex-shrink: 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.service-status-text {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.service-status-text.enabled {
+  color: #1AAD19;
+  font-weight: 600;
+}
+
+.service-status-text.offline {
+  color: #8a6d3b;
+}
+
+.developer-settings {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #dfe5df;
+}
+
+.developer-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
 .service-field {
   margin-top: 12px;
 }
@@ -194,6 +236,14 @@
 
 .service-notice {
   margin-top: 12px;
+}
+
+.version-entry {
+  padding: 2px 0 12px;
+  color: #b0b0b0;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.6;
 }
 
 /* 提醒说明 */

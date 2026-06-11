@@ -2,7 +2,7 @@
   <!-- 日期与完成状态 -->
   <view class="section date-section">
     <view class="date-display">{{ today }}</view>
-    <view class="goal-display">{{ learningGoalText }} · {{ intensityText }}强度</view>
+    <view class="goal-display">{{ learningGoalText }} · {{ intensityText }}</view>
     <view class="complete-badge" wx:if="{{ todayData.complete }}">今日英语完成 ✅</view>
   </view>
 
@@ -33,7 +33,7 @@
     <view class="plan-summary">
       <view class="plan-summary-main">
         <text class="plan-summary-title">{{ learningGoalText }} · {{ intensityText }}</text>
-        <text class="plan-summary-desc">完成 {{ planRequiredCount }} 项即可打卡，预计 {{ planTotalMinutes }} 分钟</text>
+        <text class="plan-summary-desc">已完成 {{ planCompletedCount }}/{{ planTotalCount }} 项，达到 {{ planRequiredCount }} 项即可打卡 · 预计 {{ planTotalMinutes }} 分钟</text>
       </view>
     </view>
     <view class="module-list" wx:if="{{ planModules.length > 0 }}">
@@ -41,60 +41,6 @@
         <text class="module-name">{{ item.name }}</text>
         <text class="module-meta">{{ item.count }}项 · {{ item.minutes }}分</text>
       </view>
-    </view>
-  </view>
-
-  <!-- 强度选择 -->
-  <view class="section template-section">
-    <view class="section-title">切换今日强度</view>
-    <view class="template-buttons">
-      <view class="template-btn {{ todayData.template === 'A' ? 'active' : '' }}" bindtap="selectTemplate" data-template="A">
-        <text class="template-letter">A</text>
-        <text class="template-name">轻量</text>
-      </view>
-      <view class="template-btn {{ todayData.template === 'B' ? 'active' : '' }}" bindtap="selectTemplate" data-template="B">
-        <text class="template-letter">B</text>
-        <text class="template-name">标准</text>
-      </view>
-      <view class="template-btn {{ todayData.template === 'C' ? 'active' : '' }}" bindtap="selectTemplate" data-template="C">
-        <text class="template-letter">C</text>
-        <text class="template-name">强化</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 学习前准备 -->
-  <view class="section checklist-section">
-    <view class="section-title">学习前准备</view>
-    <view class="checklist-items" wx:if="{{ startChecklist.length > 0 }}">
-      <view class="checklist-item" wx:for="{{ startChecklist }}" wx:key="id">
-        <checkbox checked="{{ todayData.start[item.id] || false }}" bindtap="toggleStart" data-id="{{ item.id }}" />
-        <text class="item-text">{{ item.text }}</text>
-      </view>
-    </view>
-    <view class="empty-state" wx:else>
-      <text class="empty-text">暂无学习前准备，请到设置页添加</text>
-    </view>
-  </view>
-
-  <!-- 今日英语任务 -->
-  <view class="section checklist-section" wx:if="{{ currentTemplate }}">
-    <view class="section-title">{{ currentTemplate.title }}</view>
-    <view class="checklist-items" wx:if="{{ currentTemplate.items.length > 0 }}">
-      <view class="checklist-item" wx:for="{{ currentTemplate.items }}" wx:key="id">
-        <checkbox checked="{{ todayData.items[item.id] || false }}" bindtap="toggleItem" data-id="{{ item.id }}" />
-        <view class="task-content">
-          <view class="task-title">{{ item.text }}</view>
-          <view class="task-meta">
-            <text>{{ item.typeLabel || '单词' }} · {{ item.module || '任务' }}</text>
-            <text wx:if="{{ item.minutes }}"> · {{ item.minutes }} 分钟</text>
-            <text wx:if="{{ item.type === 'word' }}"> · 今日单词 {{ todayData.words.length }}/10</text>
-          </view>
-        </view>
-      </view>
-    </view>
-    <view class="empty-state" wx:else>
-      <text class="empty-text">当前强度暂无任务，请到设置页添加</text>
     </view>
   </view>
 
@@ -107,7 +53,7 @@
     <view class="content-card">
       <view class="content-card-head">
         <text class="content-label">每日一句</text>
-        <button class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.sentence }}">🔊</button>
+        <view class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.sentence }}">🔊</view>
       </view>
       <view class="content-text strong">{{ dailyContent.sentence }}</view>
       <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="sentence" data-type="listen">{{ todayData.contentChecks.sentence ? '已完成' : '完成听读' }}</button>
@@ -115,7 +61,7 @@
     <view class="content-card">
       <view class="content-card-head">
         <text class="content-label">每日短文</text>
-        <button class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.shortReading }}">🔊</button>
+        <view class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.shortReading }}">🔊</view>
       </view>
       <view class="content-text">{{ dailyContent.shortReading }}</view>
       <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="shortReading" data-type="read">{{ todayData.contentChecks.shortReading ? '已阅读' : '完成阅读' }}</button>
@@ -123,7 +69,7 @@
     <view class="content-card">
       <view class="content-card-head">
         <text class="content-label">场景表达</text>
-        <button class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.sceneExpression }}">🔊</button>
+        <view class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.sceneExpression }}">🔊</view>
       </view>
       <view class="content-text strong">{{ dailyContent.sceneExpression }}</view>
       <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="sceneExpression" data-type="speak">{{ todayData.contentChecks.sceneExpression ? '已跟读' : '完成跟读' }}</button>
@@ -131,7 +77,7 @@
     <view class="content-card">
       <view class="content-card-head">
         <text class="content-label">长难句拆解</text>
-        <button class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.longSentence }}">🔊</button>
+        <view class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.longSentence }}">🔊</view>
       </view>
       <view class="content-text">{{ dailyContent.longSentence }}</view>
       <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="longSentence" data-type="read">{{ todayData.contentChecks.longSentence ? '已拆解' : '完成拆解' }}</button>
@@ -166,7 +112,7 @@
         <view class="word-main">
           <view class="word-title-row">
             <text class="word-term">{{ word.term }}</text>
-            <button class="sound-btn" bindtap="playPronunciation" data-text="{{ word.term }}" data-src="{{ word.audioSrc }}">🔊</button>
+            <view class="sound-btn" bindtap="playPronunciation" data-text="{{ word.term }}" data-src="{{ word.audioSrc }}">🔊</view>
           </view>
           <text class="word-status">{{ word.statusLabel }}</text>
         </view>
@@ -196,7 +142,7 @@
         <view class="word-main">
           <view class="word-title-row">
             <text class="word-term">{{ word.term }}</text>
-            <button class="sound-btn" bindtap="playPronunciation" data-text="{{ word.term }}" data-src="{{ word.audioSrc }}">🔊</button>
+            <view class="sound-btn" bindtap="playPronunciation" data-text="{{ word.term }}" data-src="{{ word.audioSrc }}">🔊</view>
           </view>
           <text class="word-status">{{ word.sourceDate }}</text>
         </view>
@@ -227,7 +173,7 @@
       <view class="scene-line" wx:for="{{ scene.lines }}" wx:key="id" wx:for-item="line">
         <checkbox checked="{{ line.checked }}" bindtap="toggleSceneLine" data-scene="{{ scene.id }}" data-line="{{ line.id }}" />
         <text class="scene-text">{{ line.text }}</text>
-        <button class="sound-btn scene-sound-btn" bindtap="playPronunciation" data-text="{{ line.audioText }}" data-src="{{ line.audioSrc }}">🔊</button>
+        <view class="sound-btn scene-sound-btn" bindtap="playPronunciation" data-text="{{ line.audioText }}" data-src="{{ line.audioSrc }}">🔊</view>
       </view>
     </view>
   </view>
@@ -266,7 +212,7 @@
     <view class="diary-template-list" wx:if="{{ diaryTemplates.length > 0 }}">
       <view class="diary-template" wx:for="{{ diaryTemplates }}" wx:key="id" bindtap="useDiaryTemplate" data-template="{{ item.text }}">
         <text class="diary-template-text">{{ item.text }}</text>
-        <button class="sound-btn diary-sound-btn" catchtap="playPronunciation" data-text="{{ item.audioText }}" data-src="{{ item.audioSrc }}">🔊</button>
+        <view class="sound-btn diary-sound-btn" catchtap="playPronunciation" data-text="{{ item.audioText }}" data-src="{{ item.audioSrc }}">🔊</view>
       </view>
     </view>
     <textarea class="diary-input" value="{{ todayData.diary }}" bindinput="onDiaryInput" bindblur="saveDiary" maxlength="200" placeholder="Write one sentence in English today." show-confirm-bar="{{ false }}" />

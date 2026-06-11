@@ -25,43 +25,52 @@
 
   <!-- AI 服务设置 -->
   <view class="section">
-    <view class="section-title">AI / 词典 / 发音服务</view>
+    <view class="section-title">智能学习服务</view>
     <view class="reminder-row">
       <view class="option-info">
-        <text class="reminder-label">启用服务端代理</text>
-        <text class="option-desc">用于千问内容生成、有道词典补全和 TTS 发音</text>
+        <text class="reminder-label">智能学习服务</text>
+        <text class="option-desc">生成学习内容、查询单词释义并播放发音</text>
       </view>
       <switch checked="{{ aiService.enabled }}" bindchange="onAIServiceSwitch" color="#1AAD19" />
     </view>
-    <view class="service-field">
-      <text class="service-label">调用方式</text>
-      <picker mode="selector" range="{{ ['微信云函数', 'HTTP代理'] }}" value="{{ aiService.mode === 'http' ? 1 : 0 }}" bindchange="onAIServiceModeChange">
-        <view class="service-input word-picker">{{ aiService.mode === 'http' ? 'HTTP代理' : '微信云函数' }}</view>
-      </picker>
+
+    <view class="service-status-row">
+      <text class="service-status-label">状态</text>
+      <text class="service-status-text {{ aiServiceStatusClass }}">{{ aiServiceStatusText }}</text>
     </view>
-    <view class="service-field">
-      <text class="service-label">云函数名</text>
-      <input class="service-input" value="{{ aiService.cloudFunctionName }}" bindinput="onAIServiceInput" data-field="cloudFunctionName" placeholder="aiProxy" />
+
+    <view class="developer-settings" wx:if="{{ showDeveloperSettings }}">
+      <view class="developer-title">开发者设置</view>
+      <view class="service-field">
+        <text class="service-label">调用方式</text>
+        <picker mode="selector" range="{{ ['微信云函数', 'HTTP代理'] }}" value="{{ aiService.mode === 'http' ? 1 : 0 }}" bindchange="onAIServiceModeChange">
+          <view class="service-input word-picker">{{ aiService.mode === 'http' ? 'HTTP代理' : '微信云函数' }}</view>
+        </picker>
+      </view>
+      <view class="service-field">
+        <text class="service-label">云函数名</text>
+        <input class="service-input" value="{{ aiService.cloudFunctionName }}" bindinput="onAIServiceInput" data-field="cloudFunctionName" placeholder="aiProxy" />
+      </view>
+      <view class="service-field">
+        <text class="service-label">服务地址</text>
+        <input class="service-input" value="{{ aiService.baseUrl }}" bindinput="onAIServiceInput" data-field="baseUrl" placeholder="https://你的域名/api" />
+      </view>
+      <view class="service-field">
+        <text class="service-label">提供方</text>
+        <input class="service-input" value="{{ aiService.provider }}" bindinput="onAIServiceInput" data-field="provider" placeholder="qwen" />
+      </view>
+      <view class="service-grid">
+        <input class="service-input" value="{{ aiService.dictionaryPath }}" bindinput="onAIServiceInput" data-field="dictionaryPath" placeholder="/dictionary/lookup" />
+        <input class="service-input" value="{{ aiService.ttsPath }}" bindinput="onAIServiceInput" data-field="ttsPath" placeholder="/speech/tts" />
+        <input class="service-input" value="{{ aiService.contentPath }}" bindinput="onAIServiceInput" data-field="contentPath" placeholder="/learning/content" />
+        <input class="service-input" value="{{ aiService.planPath }}" bindinput="onAIServiceInput" data-field="planPath" placeholder="/learning/plan" />
+      </view>
     </view>
-    <view class="service-field">
-      <text class="service-label">服务地址</text>
-      <input class="service-input" value="{{ aiService.baseUrl }}" bindinput="onAIServiceInput" data-field="baseUrl" placeholder="https://你的域名/api" />
-    </view>
-    <view class="service-field">
-      <text class="service-label">提供方</text>
-      <input class="service-input" value="{{ aiService.provider }}" bindinput="onAIServiceInput" data-field="provider" placeholder="qwen" />
-    </view>
-    <view class="service-grid">
-      <input class="service-input" value="{{ aiService.dictionaryPath }}" bindinput="onAIServiceInput" data-field="dictionaryPath" placeholder="/dictionary/lookup" />
-      <input class="service-input" value="{{ aiService.ttsPath }}" bindinput="onAIServiceInput" data-field="ttsPath" placeholder="/speech/tts" />
-      <input class="service-input" value="{{ aiService.contentPath }}" bindinput="onAIServiceInput" data-field="contentPath" placeholder="/learning/content" />
-      <input class="service-input" value="{{ aiService.planPath }}" bindinput="onAIServiceInput" data-field="planPath" placeholder="/learning/plan" />
-    </view>
+
     <view class="reminder-notice service-notice">
-      <view class="notice-title">接入说明</view>
+      <view class="notice-title">服务说明</view>
       <view class="notice-content">
-        <text class="notice-text">小程序只保存你的代理地址，不保存千问或有道密钥</text>
-        <text class="notice-text">未配置服务时，会使用内置单词和离线学习内容</text>
+        <text class="notice-text">开启后，小程序会使用云端服务生成学习内容、查询单词释义并播放发音。服务不可用时，将自动使用本地内容。</text>
       </view>
     </view>
   </view>
@@ -245,4 +254,6 @@
     <button class="btn-primary" bindtap="saveConfig">保存设置</button>
     <button class="btn-danger" bindtap="resetConfig">恢复默认英语任务</button>
   </view>
+
+  <view class="version-entry" bindtap="onVersionTap">版本 {{ configVersion }}</view>
 </view>
