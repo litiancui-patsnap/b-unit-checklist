@@ -67,15 +67,17 @@ async function handleDictionary(event, env) {
 
 async function handleContent(event, env) {
   const goal = event.goal || 'daily';
+  const date = cleanText(event.date || '');
   const content = await callQwenJson({
     env,
     system: '你是一个严谨的英语学习教练，只输出合法 JSON。',
     user: [
       `为一个微信英语打卡小程序生成今日学习内容，学习目标：${GOAL_LABELS[goal] || GOAL_LABELS.daily}。`,
+      date ? `今天日期：${date}。请让内容适合这一天，并避免和常规模板重复。` : '',
       '要求难度适中，内容积极、简洁、适合中国英语学习者。',
       '返回 JSON 字段：sentence, shortReading, sceneExpression, longSentence。',
       'sentence 是一句英文；shortReading 是 35-55 个英文词的短文；sceneExpression 是一句实用场景表达；longSentence 是一句可用 / 分隔意群的长难句。'
-    ].join('\n')
+    ].filter(Boolean).join('\n')
   });
 
   return {

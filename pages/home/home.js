@@ -93,6 +93,7 @@ Page({
     planTotalCount: 0,
     planModules: [],
     diaryTemplates: [],
+    diaryTemplateSourceText: '目标模板',
     wordDraft: {
       term: '',
       phonetic: '',
@@ -225,6 +226,7 @@ Page({
         learningGoalText: getGoalLabel(config.learningGoal),
         intensityText: getIntensityLabel(todayData.template),
         diaryTemplates: this.getDiaryTemplates(config.diaryTemplates || []),
+        diaryTemplateSourceText: '目标模板',
         wordDraft: {
           term: '',
           phonetic: '',
@@ -417,16 +419,51 @@ Page({
   },
 
   getDiaryTemplates(templates = []) {
-    return templates.map((template, index) => {
-      const text = typeof template === 'string' ? template : template.text;
-      const audio = DIARY_TEMPLATE_AUDIO_MAP[text] || {};
-      return {
-        id: `diary_${index + 1}`,
-        text,
-        audioText: audio.audioText || normalizePronunciationText(text),
-        audioSrc: audio.audioSrc || ''
-      };
+    return templates
+      .filter(template => typeof template === 'string' ? template.trim() : template?.text)
+      .map((template, index) => {
+        const text = typeof template === 'string' ? template : template.text;
+        const audio = DIARY_TEMPLATE_AUDIO_MAP[text] || {};
+        return {
+          id: `diary_${index + 1}`,
+          text,
+          audioText: audio.audioText || normalizePronunciationText(text),
+          audioSrc: audio.audioSrc || ''
+        };
+      });
+  },
+
+  getDiaryTemplateTextsFromContent(content, fallbackTemplates = []) {
+    const candidates = [
+      content?.sentence,
+      content?.sceneExpression,
+      this.getFirstSentence(content?.shortReading),
+      this.getFirstSentence(content?.longSentence)
+    ];
+    const uniqueTexts = [];
+
+    candidates.forEach(text => {
+      const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+      if (normalized && !uniqueTexts.includes(normalized)) {
+        uniqueTexts.push(normalized);
+      }
     });
+
+    if (uniqueTexts.length) {
+      return uniqueTexts.slice(0, 5);
+    }
+
+    return fallbackTemplates;
+  },
+
+  getFirstSentence(text = '') {
+    const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '';
+    }
+
+    const match = normalized.match(/^(.+?[.!?])(\s|$)/);
+    return (match ? match[1] : normalized).slice(0, 120);
   },
 
   onWordDraftInput(e) {
@@ -738,9 +775,12 @@ Page({
   async loadDailyContent() {
     const { config, today } = this.data;
     const content = await getDailyContent(config, config.learningGoal || 'daily', today);
+    const diaryTemplateTexts = this.getDiaryTemplateTextsFromContent(content, config.diaryTemplates || []);
     this.setData({
       dailyContent: content,
-      contentSourceText: content.source === 'fallback' ? '离线内容' : 'AI生成'
+      contentSourceText: content.source === 'fallback' ? '离线内容' : 'AI生成',
+      diaryTemplates: this.getDiaryTemplates(diaryTemplateTexts),
+      diaryTemplateSourceText: content.source === 'fallback' ? '今日输入摘抄' : 'AI每日句子'
     });
   },
 

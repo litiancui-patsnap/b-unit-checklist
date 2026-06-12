@@ -1,7 +1,38 @@
 <view class="container onboarding-page">
   <view class="hero-section">
-    <view class="hero-title">每天 15 分钟英语陪练</view>
-    <view class="hero-subtitle">先选目标和强度，今天就能开始。</view>
+    <view class="hero-kicker">每日英语打卡</view>
+    <view class="hero-title">按你的目标生成今天的英语计划</view>
+    <view class="hero-subtitle">目标会改变训练内容，强度会改变任务量和完成门槛。</view>
+  </view>
+
+  <view class="preview-panel">
+    <view class="preview-head">
+      <view>
+        <view class="preview-label">当前计划</view>
+        <view class="preview-title">{{ planPreview.goalLabel }} · {{ planPreview.intensityLabel }}</view>
+      </view>
+      <view class="preview-time">{{ planPreview.totalMinutes }}<text>分</text></view>
+    </view>
+    <view class="preview-stats">
+      <view class="preview-stat">
+        <text class="stat-value">{{ planPreview.totalCount }}</text>
+        <text class="stat-label">任务项</text>
+      </view>
+      <view class="preview-stat">
+        <text class="stat-value">{{ planPreview.threshold }}</text>
+        <text class="stat-label">达标项</text>
+      </view>
+      <view class="preview-stat">
+        <text class="stat-value">{{ planPreview.diaryTemplates.length }}</text>
+        <text class="stat-label">日记模板</text>
+      </view>
+    </view>
+    <view class="module-list" wx:if="{{ planPreview.modules.length > 0 }}">
+      <view class="module-chip" wx:for="{{ planPreview.modules }}" wx:key="name">
+        <text class="module-name">{{ item.name }}</text>
+        <text class="module-meta">{{ item.count }}项 · {{ item.minutes }}分</text>
+      </view>
+    </view>
   </view>
 
   <view class="section">
@@ -16,14 +47,29 @@
 
   <view class="section">
     <view class="section-title">选择每日强度</view>
-    <view class="choice-list">
-      <view class="choice-item {{ item.activeClass }}" wx:for="{{ intensities }}" wx:key="value" bindtap="selectIntensity" data-intensity="{{ item.value }}">
+    <view class="intensity-grid">
+      <view class="intensity-card {{ item.activeClass }}" wx:for="{{ intensityPreviews }}" wx:key="value" bindtap="selectIntensity" data-intensity="{{ item.value }}">
         <view class="choice-row">
           <text class="choice-main">{{ item.label }}</text>
-          <text class="minutes-badge">{{ item.minutes }} 分钟</text>
+          <text class="minutes-badge">{{ item.totalMinutes }} 分钟</text>
         </view>
-        <view class="choice-desc">{{ item.description }}</view>
+        <view class="intensity-meta">{{ item.totalCount }} 项任务 · 完成 {{ item.threshold }} 项达标</view>
       </view>
+    </view>
+  </view>
+
+  <view class="section task-preview-section">
+    <view class="section-title">生成后的今日任务</view>
+    <view class="task-preview-list">
+      <view class="task-preview-item" wx:for="{{ planPreview.items }}" wx:key="id">
+        <view class="task-module">{{ item.module }}</view>
+        <view class="task-text">{{ item.text }}</view>
+        <view class="task-minutes">{{ item.minutes }} 分</view>
+      </view>
+    </view>
+    <view class="effect-list">
+      <view class="effect-item">学习目标还会影响推荐词、每日输入内容和英文日记模板。</view>
+      <view class="effect-item">每日强度会影响默认展示的任务组、预计用时和打卡阈值。</view>
     </view>
   </view>
 

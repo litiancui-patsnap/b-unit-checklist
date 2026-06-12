@@ -68,6 +68,10 @@
   gap: 10px;
 }
 
+.section-header-row .section-title {
+  margin-bottom: 0;
+}
+
 .source-badge {
   flex-shrink: 0;
   padding: 3px 8px;
@@ -175,6 +179,10 @@
   flex-direction: column;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.diary-header-row {
+  margin-bottom: 14px;
 }
 
 .diary-template {

@@ -208,7 +208,10 @@
 
   <!-- 英文日记 -->
   <view class="section diary-section">
-    <view class="section-title">英文日记一句话</view>
+    <view class="section-header-row diary-header-row">
+      <view class="section-title">英文日记一句话</view>
+      <view class="source-badge">{{ diaryTemplateSourceText }}</view>
+    </view>
     <view class="diary-template-list" wx:if="{{ diaryTemplates.length > 0 }}">
       <view class="diary-template" wx:for="{{ diaryTemplates }}" wx:key="id" bindtap="useDiaryTemplate" data-template="{{ item.text }}">
         <text class="diary-template-text">{{ item.text }}</text>
