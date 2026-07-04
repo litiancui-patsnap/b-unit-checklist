@@ -230,7 +230,7 @@
 
 .share-textarea {
   width: 100%;
-  min-height: 180px;
+  min-height: 150px;
   border: 1.5px solid #e0e0e0;
   border-radius: 8px;
   padding: 12px;
@@ -239,6 +239,64 @@
   background-color: #fafafa;
   color: #333;
   box-sizing: border-box;
+}
+
+.share-card-preview {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e4f1e4;
+  border-radius: 8px;
+  background-color: #f7fbf7;
+}
+
+.share-cover {
+  flex-shrink: 0;
+  width: 72px;
+  height: 54px;
+  border-radius: 6px;
+  background-color: #edf0ed;
+}
+
+.share-card-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.share-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #233323;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.share-card-desc {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #6f7f6f;
+  line-height: 1.5;
+}
+
+.share-action-row {
+  display: flex;
+  gap: 10px;
+  margin: 12px auto;
+  width: 88%;
+  box-sizing: border-box;
+}
+
+.share-card-button,
+.share-copy-button {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .recent-section {
@@ -332,14 +390,22 @@
 }
 
 .word-action-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  display: flex;
   gap: 8px;
+  width: 88%;
+  margin: 10px auto;
+  box-sizing: border-box;
 }
 
 .compact-btn {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-size: 13px;
   padding: 9px 8px;
+  line-height: 1.4;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .word-list,
