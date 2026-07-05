@@ -1,0 +1,18 @@
+node_modules
+.DS_Store
+*.log
+.env
+.env.local
+
+# 小程序文件不需要部署到 Vercel
+pages/
+images/
+utils/
+cloudfunctions/
+test/
+app.js
+app.json
+app.wxss
+project.config.json
+project.private.config.json
+sitemap.json

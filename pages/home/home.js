@@ -121,7 +121,9 @@ Page({
     contentSourceText: '离线内容',
     aiBusy: false,
     ttsLoadingText: '',
-    shareText: ''
+    shareText: '',
+    shareTitle: '我完成了今日英语打卡',
+    sharePath: '/pages/home/home?from=checkin_share'
   },
 
   onLoad() {
@@ -245,8 +247,10 @@ Page({
       const streak = this.calculateStreak();
       this.loadRecent7Days();
       if (todayData.complete) {
+        const shareText = this.generateShareText(todayData, streak);
         this.setData({
-          shareText: this.generateShareText(todayData, streak)
+          shareText,
+          ...this.getShareCardData(todayData, streak)
         });
       }
     } catch (error) {
@@ -926,8 +930,10 @@ Page({
     this.setData({ todayData });
     this.saveTodayData();
     const streak = this.calculateStreak();
+    const shareText = this.generateShareText(todayData, streak);
     this.setData({
-      shareText: this.generateShareText(todayData, streak)
+      shareText,
+      ...this.getShareCardData(todayData, streak)
     });
 
     wx.showToast({
@@ -1094,7 +1100,49 @@ Page({
     if (diary) {
       text += `\n今日英文句子：${diary}`;
     }
+    text += `\n\n点击微信分享卡片可直接打开小程序，一起坚持英语打卡。`;
     return text;
+  },
+
+  getShareCardData(dayData = this.data.todayData, streakValue = this.data.streak) {
+    const { today, learningGoalText } = this.data;
+    const checkedCount = countCheckedByItems(
+      dayData.items,
+      this.data.config?.templates?.[dayData.template]?.items || []
+    );
+    const goal = this.data.config?.learningGoal || 'daily';
+    const intensity = dayData.template || this.data.config?.dailyIntensity || 'B';
+    const params = [
+      'from=checkin_share',
+      `date=${encodeURIComponent(today || '')}`,
+      `goal=${encodeURIComponent(goal)}`,
+      `intensity=${encodeURIComponent(intensity)}`
+    ].join('&');
+
+    return {
+      shareTitle: `${learningGoalText || '英语'}打卡完成：${checkedCount} 项 · 连续 ${streakValue || 0} 天`,
+      sharePath: `/pages/home/home?${params}`
+    };
+  },
+
+  onShareAppMessage() {
+    const { todayData, streak } = this.data;
+    const shareData = this.getShareCardData(todayData, streak);
+    return {
+      title: shareData.shareTitle,
+      path: shareData.sharePath,
+      imageUrl: '/assets/article-cover-english-pivot.png'
+    };
+  },
+
+  onShareTimeline() {
+    const { todayData, streak } = this.data;
+    const shareData = this.getShareCardData(todayData, streak);
+    return {
+      title: shareData.shareTitle,
+      query: shareData.sharePath.split('?')[1] || '',
+      imageUrl: '/assets/article-cover-english-pivot.png'
+    };
   },
 
   copyShareText() {

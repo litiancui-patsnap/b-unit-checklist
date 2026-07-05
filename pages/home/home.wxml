@@ -233,9 +233,19 @@
 
   <!-- 分享文案 -->
   <view class="section share-section" wx:if="{{ shareText }}">
-    <view class="section-title">打卡分享文案</view>
+    <view class="section-title">打卡分享</view>
+    <view class="share-card-preview">
+      <image class="share-cover" src="/assets/article-cover-english-pivot.png" mode="aspectFill" />
+      <view class="share-card-main">
+        <view class="share-card-title">{{ shareTitle }}</view>
+        <view class="share-card-desc">好友点击微信分享卡片可直接进入小程序</view>
+      </view>
+    </view>
+    <view class="share-action-row">
+      <button class="btn-primary share-card-button" open-type="share">分享小程序卡片</button>
+      <button class="btn-default share-copy-button" bindtap="copyShareText">复制打卡文案</button>
+    </view>
     <textarea class="share-textarea" value="{{ shareText }}" disabled maxlength="-1" show-confirm-bar="{{ false }}" />
-    <button class="btn-primary" bindtap="copyShareText">复制分享文案</button>
   </view>
 
   <!-- 最近7天 -->
