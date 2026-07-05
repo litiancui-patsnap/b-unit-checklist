@@ -3,23 +3,50 @@ const {
   CONFIG_VERSION,
   DAILY_INTENSITIES,
   LEARNING_GOALS,
-  TASK_TYPES,
   getDefaultConfig,
   getDiaryTemplates,
-  getTaskTypeLabel,
-  getTemplatesForGoal,
-  generateId,
-  normalizeTaskItem
+  getTemplatesForGoal
 } = require('../../utils/defaultConfig.js');
+
+function getAIServiceStatus(service = {}) {
+  const hasRoute = service.mode === 'cloud' || Boolean(String(service.baseUrl || '').trim());
+  if (service.enabled && hasRoute) {
+    return {
+      text: '已启用',
+      className: 'enabled'
+    };
+  }
+
+  return {
+    text: '未连接，当前使用本地内容',
+    className: 'offline'
+  };
+}
+
+function hasValidStartChecklist(startChecklist = []) {
+  return Array.isArray(startChecklist) && startChecklist.length > 0 && startChecklist.every(item => item.text && item.text.trim());
+}
+
+function hasValidTemplate(template = {}) {
+  const items = template.items || [];
+  return items.length > 0 &&
+    template.threshold >= 1 &&
+    template.threshold <= items.length &&
+    items.every(item => item.text && item.text.trim());
+}
+
+function cloneData(data) {
+  return JSON.parse(JSON.stringify(data));
+}
 
 Page({
   data: {
+    configVersion: CONFIG_VERSION,
     learningGoalOptions: LEARNING_GOALS,
     dailyIntensityOptions: DAILY_INTENSITIES.map(item => ({
       ...item,
       displayLabel: `${item.label}：${item.description}`
     })),
-    taskTypeOptions: TASK_TYPES,
     learningGoal: 'daily',
     dailyIntensity: 'B',
     learningGoalIndex: 0,
@@ -43,6 +70,10 @@ Page({
       planPath: '/learning/plan'
     },
     config: null,
+    showDeveloperSettings: false,
+    versionTapCount: 0,
+    aiServiceStatusText: '已启用',
+    aiServiceStatusClass: 'enabled',
     showMethodGuide: false
   },
 
@@ -59,46 +90,34 @@ Page({
     const learningGoalIndex = this.data.learningGoalOptions.findIndex(item => item.value === config.learningGoal);
     const dailyIntensityIndex = this.data.dailyIntensityOptions.findIndex(item => item.value === config.dailyIntensity);
 
+    const aiService = JSON.parse(JSON.stringify(config.aiService || {}));
+    const status = getAIServiceStatus(aiService);
+
     this.setData({
       config,
       learningGoal: config.learningGoal || 'daily',
       dailyIntensity: config.dailyIntensity || 'B',
       learningGoalIndex: learningGoalIndex >= 0 ? learningGoalIndex : 0,
       dailyIntensityIndex: dailyIntensityIndex >= 0 ? dailyIntensityIndex : 1,
-      startChecklist: JSON.parse(JSON.stringify(config.startChecklist)),
-      templateA: this.toEditableTemplate(config.templates.A),
-      templateB: this.toEditableTemplate(config.templates.B),
-      templateC: this.toEditableTemplate(config.templates.C),
-      diaryTemplates: JSON.parse(JSON.stringify(config.diaryTemplates || getDiaryTemplates(config.learningGoal))),
+      startChecklist: cloneData(config.startChecklist),
+      templateA: cloneData(config.templates.A),
+      templateB: cloneData(config.templates.B),
+      templateC: cloneData(config.templates.C),
+      diaryTemplates: cloneData(config.diaryTemplates || getDiaryTemplates(config.learningGoal)),
       reminderEnabled: config.reminder.enabled,
       reminderTime: config.reminder.time,
-      aiService: JSON.parse(JSON.stringify(config.aiService || {}))
+      aiService,
+      aiServiceStatusText: status.text,
+      aiServiceStatusClass: status.className
     });
   },
 
-  toEditableTemplate(template) {
-    return {
-      ...JSON.parse(JSON.stringify(template)),
-      items: (template.items || []).map(item => {
-        const normalized = normalizeTaskItem(item);
-        const typeIndex = TASK_TYPES.findIndex(type => type.value === normalized.type);
-        return {
-          ...normalized,
-          typeIndex: typeIndex >= 0 ? typeIndex : 0
-        };
-      })
-    };
-  },
-
-  toSavableTemplate(template) {
-    return {
-      ...template,
-      items: (template.items || []).map(item => {
-        const normalized = normalizeTaskItem(item);
-        const { typeIndex, ...savable } = normalized;
-        return savable;
-      })
-    };
+  refreshAIServiceStatus(aiService = this.data.aiService) {
+    const status = getAIServiceStatus(aiService);
+    this.setData({
+      aiServiceStatusText: status.text,
+      aiServiceStatusClass: status.className
+    });
   },
 
   onLearningGoalChange(e) {
@@ -124,155 +143,6 @@ Page({
     }
   },
 
-  onStartInput(e) {
-    const id = e.currentTarget.dataset.id;
-    const value = e.detail.value;
-    const { startChecklist } = this.data;
-
-    const item = startChecklist.find(item => item.id === id);
-    if (item) {
-      item.text = value;
-      this.setData({ startChecklist });
-    }
-  },
-
-  addStart() {
-    const { startChecklist } = this.data;
-    startChecklist.push({
-      id: generateId(),
-      text: ''
-    });
-    this.setData({ startChecklist });
-  },
-
-  deleteStart(e) {
-    const id = e.currentTarget.dataset.id;
-    wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这一项吗？',
-      success: (res) => {
-        if (res.confirm) {
-          const { startChecklist } = this.data;
-          const newList = startChecklist.filter(item => item.id !== id);
-          this.setData({ startChecklist: newList });
-        }
-      }
-    });
-  },
-
-  onThresholdInput(e) {
-    const template = e.currentTarget.dataset.template;
-    const value = parseInt(e.detail.value) || 0;
-
-    if (template === 'A') {
-      const { templateA } = this.data;
-      templateA.threshold = value;
-      this.setData({ templateA });
-    } else if (template === 'B') {
-      const { templateB } = this.data;
-      templateB.threshold = value;
-      this.setData({ templateB });
-    } else if (template === 'C') {
-      const { templateC } = this.data;
-      templateC.threshold = value;
-      this.setData({ templateC });
-    }
-  },
-
-  onTemplateInput(e) {
-    const template = e.currentTarget.dataset.template;
-    const id = e.currentTarget.dataset.id;
-    const value = e.detail.value;
-
-    const templateKey = `template${template}`;
-    const templateData = this.data[templateKey];
-    const item = templateData.items.find(item => item.id === id);
-    if (item) {
-      item.text = value;
-      this.setData({ [templateKey]: templateData });
-    }
-  },
-
-  onTemplateTypeChange(e) {
-    const template = e.currentTarget.dataset.template;
-    const id = e.currentTarget.dataset.id;
-    const index = Number(e.detail.value);
-    const option = this.data.taskTypeOptions[index] || this.data.taskTypeOptions[0];
-    const templateKey = `template${template}`;
-    const templateData = this.data[templateKey];
-    const item = templateData.items.find(item => item.id === id);
-
-    if (item) {
-      item.type = option.value;
-      item.typeIndex = index;
-      item.module = getTaskTypeLabel(option.value);
-      this.setData({ [templateKey]: templateData });
-    }
-  },
-
-  onTemplateModuleInput(e) {
-    const template = e.currentTarget.dataset.template;
-    const id = e.currentTarget.dataset.id;
-    const value = e.detail.value;
-    const templateKey = `template${template}`;
-    const templateData = this.data[templateKey];
-    const item = templateData.items.find(item => item.id === id);
-
-    if (item) {
-      item.module = value;
-      this.setData({ [templateKey]: templateData });
-    }
-  },
-
-  onTemplateMinutesInput(e) {
-    const template = e.currentTarget.dataset.template;
-    const id = e.currentTarget.dataset.id;
-    const value = parseInt(e.detail.value) || 0;
-    const templateKey = `template${template}`;
-    const templateData = this.data[templateKey];
-    const item = templateData.items.find(item => item.id === id);
-
-    if (item) {
-      item.minutes = value;
-      this.setData({ [templateKey]: templateData });
-    }
-  },
-
-  addTemplateItem(e) {
-    const template = e.currentTarget.dataset.template;
-    const templateKey = `template${template}`;
-    const templateData = this.data[templateKey];
-
-    templateData.items.push({
-      id: generateId(),
-      type: 'word',
-      typeIndex: 0,
-      module: '单词',
-      text: '',
-      minutes: 3
-    });
-
-    this.setData({ [templateKey]: templateData });
-  },
-
-  deleteTemplateItem(e) {
-    const template = e.currentTarget.dataset.template;
-    const id = e.currentTarget.dataset.id;
-
-    wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这一项吗？',
-      success: (res) => {
-        if (res.confirm) {
-          const templateKey = `template${template}`;
-          const templateData = this.data[templateKey];
-          templateData.items = templateData.items.filter(item => item.id !== id);
-          this.setData({ [templateKey]: templateData });
-        }
-      }
-    });
-  },
-
   onReminderSwitch(e) {
     this.setData({
       reminderEnabled: e.detail.value
@@ -286,23 +156,61 @@ Page({
   },
 
   onAIServiceSwitch(e) {
+    const aiService = {
+      ...this.data.aiService,
+      enabled: e.detail.value
+    };
     this.setData({
-      'aiService.enabled': e.detail.value
+      aiService
     });
+    this.refreshAIServiceStatus(aiService);
   },
 
   onAIServiceInput(e) {
     const field = e.currentTarget.dataset.field;
+    const aiService = {
+      ...this.data.aiService,
+      [field]: e.detail.value
+    };
     this.setData({
-      [`aiService.${field}`]: e.detail.value
+      aiService
     });
+    this.refreshAIServiceStatus(aiService);
   },
 
   onAIServiceModeChange(e) {
     const modes = ['cloud', 'http'];
     const mode = modes[Number(e.detail.value)] || 'cloud';
+    const aiService = {
+      ...this.data.aiService,
+      mode
+    };
     this.setData({
-      'aiService.mode': mode
+      aiService
+    });
+    this.refreshAIServiceStatus(aiService);
+  },
+
+  onVersionTap() {
+    if (this.data.showDeveloperSettings) {
+      return;
+    }
+
+    const nextCount = this.data.versionTapCount + 1;
+    if (nextCount >= 5) {
+      this.setData({
+        showDeveloperSettings: true,
+        versionTapCount: 0
+      });
+      wx.showToast({
+        title: '已进入开发者设置',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.setData({
+      versionTapCount: nextCount
     });
   },
 
@@ -310,9 +218,9 @@ Page({
     const { learningGoal } = this.data;
     const templates = getTemplatesForGoal(learningGoal);
     this.setData({
-      templateA: this.toEditableTemplate(templates.A),
-      templateB: this.toEditableTemplate(templates.B),
-      templateC: this.toEditableTemplate(templates.C),
+      templateA: cloneData(templates.A),
+      templateB: cloneData(templates.B),
+      templateC: cloneData(templates.C),
       diaryTemplates: getDiaryTemplates(learningGoal)
     });
 
@@ -324,105 +232,18 @@ Page({
 
   saveConfig() {
     const { learningGoal, dailyIntensity, startChecklist, templateA, templateB, templateC, diaryTemplates, reminderEnabled, reminderTime, aiService } = this.data;
-    const savableTemplateA = this.toSavableTemplate(templateA);
-    const savableTemplateB = this.toSavableTemplate(templateB);
-    const savableTemplateC = this.toSavableTemplate(templateC);
-
-    if (!startChecklist || startChecklist.length === 0) {
-      wx.showToast({
-        title: '学习准备不能为空',
-        icon: 'none'
-      });
-      return;
-    }
-
-    for (let item of startChecklist) {
-      if (!item.text || !item.text.trim()) {
-        wx.showToast({
-          title: '学习准备有空项',
-          icon: 'none'
-        });
-        return;
-      }
-    }
-
-    if (!savableTemplateA.items || savableTemplateA.items.length === 0) {
-      wx.showToast({
-        title: '轻量任务不能为空',
-        icon: 'none'
-      });
-      return;
-    }
-
-    for (let item of savableTemplateA.items) {
-      if (!item.text || !item.text.trim()) {
-        wx.showToast({
-          title: '轻量任务有空项',
-          icon: 'none'
-        });
-        return;
-      }
-    }
-
-    if (!savableTemplateB.items || savableTemplateB.items.length === 0) {
-      wx.showToast({
-        title: '标准任务不能为空',
-        icon: 'none'
-      });
-      return;
-    }
-
-    for (let item of savableTemplateB.items) {
-      if (!item.text || !item.text.trim()) {
-        wx.showToast({
-          title: '标准任务有空项',
-          icon: 'none'
-        });
-        return;
-      }
-    }
-
-    if (!savableTemplateC.items || savableTemplateC.items.length === 0) {
-      wx.showToast({
-        title: '强化任务不能为空',
-        icon: 'none'
-      });
-      return;
-    }
-
-    for (let item of savableTemplateC.items) {
-      if (!item.text || !item.text.trim()) {
-        wx.showToast({
-          title: '强化任务有空项',
-          icon: 'none'
-        });
-        return;
-      }
-    }
-
-    if (savableTemplateA.threshold < 0 || savableTemplateB.threshold < 0 || savableTemplateC.threshold < 0) {
-      wx.showToast({
-        title: '阈值不能为负数',
-        icon: 'none'
-      });
-      return;
-    }
-
-    const thresholdRules = [
-      { name: '轻量任务', template: savableTemplateA },
-      { name: '标准任务', template: savableTemplateB },
-      { name: '强化任务', template: savableTemplateC }
-    ];
-
-    for (let rule of thresholdRules) {
-      if (rule.template.threshold < 1 || rule.template.threshold > rule.template.items.length) {
-        wx.showToast({
-          title: `${rule.name}阈值需为1-${rule.template.items.length}`,
-          icon: 'none'
-        });
-        return;
-      }
-    }
+    const defaultConfig = getDefaultConfig(learningGoal, dailyIntensity);
+    const currentTemplates = {
+      A: templateA || defaultConfig.templates.A,
+      B: templateB || defaultConfig.templates.B,
+      C: templateC || defaultConfig.templates.C
+    };
+    const safeTemplates = {
+      A: hasValidTemplate(currentTemplates.A) ? currentTemplates.A : defaultConfig.templates.A,
+      B: hasValidTemplate(currentTemplates.B) ? currentTemplates.B : defaultConfig.templates.B,
+      C: hasValidTemplate(currentTemplates.C) ? currentTemplates.C : defaultConfig.templates.C
+    };
+    const safeStartChecklist = hasValidStartChecklist(startChecklist) ? startChecklist : defaultConfig.startChecklist;
 
     try {
       const newConfig = {
@@ -442,12 +263,8 @@ Page({
           contentPath: aiService.contentPath || '/learning/content',
           planPath: aiService.planPath || '/learning/plan'
         },
-        startChecklist,
-        templates: {
-          A: savableTemplateA,
-          B: savableTemplateB,
-          C: savableTemplateC
-        },
+        startChecklist: safeStartChecklist,
+        templates: safeTemplates,
         reminder: {
           enabled: reminderEnabled,
           time: reminderTime

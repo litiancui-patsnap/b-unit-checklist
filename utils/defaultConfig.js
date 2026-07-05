@@ -206,9 +206,9 @@ function getDefaultConfig(goal = 'daily', dailyIntensity = 'B') {
     dailyIntensity,
     aiService: {
       enabled: true,
-      mode: 'cloud',
+      mode: 'http',
       cloudFunctionName: 'aiProxy',
-      baseUrl: '',
+      baseUrl: 'https://b-unit-checklist-main.vercel.app',
       provider: 'qwen',
       dictionaryPath: '/dictionary/lookup',
       ttsPath: '/speech/tts',

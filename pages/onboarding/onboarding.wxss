@@ -3,13 +3,21 @@
 }
 
 .hero-section {
-  padding: 28px 4px 12px;
+  padding: 24px 4px 14px;
+}
+
+.hero-kicker {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  letter-spacing: 0;
 }
 
 .hero-title {
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 700;
-  color: #1f2d1f;
+  color: #172033;
   line-height: 1.3;
 }
 
@@ -18,6 +26,104 @@
   font-size: 14px;
   color: #666;
   line-height: 1.6;
+}
+
+.preview-panel {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #172033;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(23, 32, 51, 0.14);
+}
+
+.preview-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.preview-title {
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.preview-time {
+  flex-shrink: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: #f6c35b;
+}
+
+.preview-time text {
+  margin-left: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.preview-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.preview-stat {
+  padding: 10px 8px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.stat-value {
+  display: block;
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.stat-label {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.module-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.module-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.module-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.module-meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.68);
 }
 
 .choice-list {
@@ -31,6 +137,11 @@
   border: 1.5px solid #e5e5e5;
   border-radius: 8px;
   background-color: #fafafa;
+}
+
+.choice-item:active,
+.intensity-card:active {
+  background-color: #f5f7f5;
 }
 
 .choice-item.active {
@@ -49,6 +160,7 @@
   font-size: 16px;
   font-weight: 600;
   color: #333;
+  line-height: 1.35;
 }
 
 .choice-desc {
@@ -61,10 +173,108 @@
 .minutes-badge {
   flex-shrink: 0;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: 8px;
   font-size: 12px;
   color: #1AAD19;
   background-color: #fff;
+}
+
+.intensity-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.intensity-card {
+  padding: 13px;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.intensity-card.active {
+  border-color: #1AAD19;
+  background-color: #f1f8f4;
+}
+
+.intensity-meta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #777;
+  line-height: 1.5;
+}
+
+.task-preview-section {
+  margin-bottom: 18px;
+}
+
+.task-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-preview-item {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #edf0ed;
+  border-radius: 8px;
+  background-color: #fcfdfc;
+}
+
+.task-module {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1AAD19;
+  word-break: break-all;
+}
+
+.task-text {
+  min-width: 0;
+  font-size: 13px;
+  color: #333;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.task-minutes {
+  font-size: 12px;
+  color: #777;
+  text-align: right;
+}
+
+.effect-list {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #fff8ec;
+}
+
+.effect-item {
+  position: relative;
+  padding-left: 12px;
+  font-size: 12px;
+  color: #7a5319;
+  line-height: 1.6;
+}
+
+.effect-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #c47b16;
+}
+
+.effect-item + .effect-item {
+  margin-top: 4px;
 }
 
 .start-button {

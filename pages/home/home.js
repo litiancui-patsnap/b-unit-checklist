@@ -89,8 +89,11 @@ Page({
     intensityText: '',
     planTotalMinutes: 0,
     planRequiredCount: 0,
+    planCompletedCount: 0,
+    planTotalCount: 0,
     planModules: [],
     diaryTemplates: [],
+    diaryTemplateSourceText: '目标模板',
     wordDraft: {
       term: '',
       phonetic: '',
@@ -118,7 +121,9 @@ Page({
     contentSourceText: '离线内容',
     aiBusy: false,
     ttsLoadingText: '',
-    shareText: ''
+    shareText: '',
+    shareTitle: '我完成了今日英语打卡',
+    sharePath: '/pages/home/home?from=checkin_share'
   },
 
   onLoad() {
@@ -223,6 +228,7 @@ Page({
         learningGoalText: getGoalLabel(config.learningGoal),
         intensityText: getIntensityLabel(todayData.template),
         diaryTemplates: this.getDiaryTemplates(config.diaryTemplates || []),
+        diaryTemplateSourceText: '目标模板',
         wordDraft: {
           term: '',
           phonetic: '',
@@ -241,8 +247,10 @@ Page({
       const streak = this.calculateStreak();
       this.loadRecent7Days();
       if (todayData.complete) {
+        const shareText = this.generateShareText(todayData, streak);
         this.setData({
-          shareText: this.generateShareText(todayData, streak)
+          shareText,
+          ...this.getShareCardData(todayData, streak)
         });
       }
     } catch (error) {
@@ -273,6 +281,8 @@ Page({
         currentTemplate: null,
         planTotalMinutes: 0,
         planRequiredCount: 0,
+        planCompletedCount: 0,
+        planTotalCount: 0,
         planModules: []
       });
     }
@@ -300,6 +310,7 @@ Page({
     return {
       planTotalMinutes: items.reduce((sum, item) => sum + Number(item.minutes || 0), 0),
       planRequiredCount: template?.threshold || 0,
+      planTotalCount: items.length,
       planModules: modules
     };
   },
@@ -412,16 +423,51 @@ Page({
   },
 
   getDiaryTemplates(templates = []) {
-    return templates.map((template, index) => {
-      const text = typeof template === 'string' ? template : template.text;
-      const audio = DIARY_TEMPLATE_AUDIO_MAP[text] || {};
-      return {
-        id: `diary_${index + 1}`,
-        text,
-        audioText: audio.audioText || normalizePronunciationText(text),
-        audioSrc: audio.audioSrc || ''
-      };
+    return templates
+      .filter(template => typeof template === 'string' ? template.trim() : template?.text)
+      .map((template, index) => {
+        const text = typeof template === 'string' ? template : template.text;
+        const audio = DIARY_TEMPLATE_AUDIO_MAP[text] || {};
+        return {
+          id: `diary_${index + 1}`,
+          text,
+          audioText: audio.audioText || normalizePronunciationText(text),
+          audioSrc: audio.audioSrc || ''
+        };
+      });
+  },
+
+  getDiaryTemplateTextsFromContent(content, fallbackTemplates = []) {
+    const candidates = [
+      content?.sentence,
+      content?.sceneExpression,
+      this.getFirstSentence(content?.shortReading),
+      this.getFirstSentence(content?.longSentence)
+    ];
+    const uniqueTexts = [];
+
+    candidates.forEach(text => {
+      const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+      if (normalized && !uniqueTexts.includes(normalized)) {
+        uniqueTexts.push(normalized);
+      }
     });
+
+    if (uniqueTexts.length) {
+      return uniqueTexts.slice(0, 5);
+    }
+
+    return fallbackTemplates;
+  },
+
+  getFirstSentence(text = '') {
+    const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '';
+    }
+
+    const match = normalized.match(/^(.+?[.!?])(\s|$)/);
+    return (match ? match[1] : normalized).slice(0, 120);
   },
 
   onWordDraftInput(e) {
@@ -733,9 +779,12 @@ Page({
   async loadDailyContent() {
     const { config, today } = this.data;
     const content = await getDailyContent(config, config.learningGoal || 'daily', today);
+    const diaryTemplateTexts = this.getDiaryTemplateTextsFromContent(content, config.diaryTemplates || []);
     this.setData({
       dailyContent: content,
-      contentSourceText: content.source === 'fallback' ? '离线内容' : 'AI生成'
+      contentSourceText: content.source === 'fallback' ? '离线内容' : 'AI生成',
+      diaryTemplates: this.getDiaryTemplates(diaryTemplateTexts),
+      diaryTemplateSourceText: content.source === 'fallback' ? '今日输入摘抄' : 'AI每日句子'
     });
   },
 
@@ -804,19 +853,18 @@ Page({
   },
 
   calculateProgress() {
-    const { todayData, startChecklist, currentTemplate } = this.data;
+    const { todayData, currentTemplate } = this.data;
 
-    let totalItems = startChecklist.length;
-    let checkedItems = countCheckedByItems(todayData.start, startChecklist);
-
-    if (currentTemplate) {
-      totalItems += currentTemplate.items.length;
-      checkedItems += countCheckedByItems(todayData.items, currentTemplate.items);
-    }
+    const totalItems = currentTemplate?.items?.length || 0;
+    const checkedItems = currentTemplate ? countCheckedByItems(todayData.items, currentTemplate.items) : 0;
 
     const progress = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
 
-    this.setData({ progress });
+    this.setData({
+      progress,
+      planCompletedCount: checkedItems,
+      planTotalCount: totalItems
+    });
   },
 
   completeToday() {
@@ -882,8 +930,10 @@ Page({
     this.setData({ todayData });
     this.saveTodayData();
     const streak = this.calculateStreak();
+    const shareText = this.generateShareText(todayData, streak);
     this.setData({
-      shareText: this.generateShareText(todayData, streak)
+      shareText,
+      ...this.getShareCardData(todayData, streak)
     });
 
     wx.showToast({
@@ -1050,7 +1100,49 @@ Page({
     if (diary) {
       text += `\n今日英文句子：${diary}`;
     }
+    text += `\n\n点击微信分享卡片可直接打开小程序，一起坚持英语打卡。`;
     return text;
+  },
+
+  getShareCardData(dayData = this.data.todayData, streakValue = this.data.streak) {
+    const { today, learningGoalText } = this.data;
+    const checkedCount = countCheckedByItems(
+      dayData.items,
+      this.data.config?.templates?.[dayData.template]?.items || []
+    );
+    const goal = this.data.config?.learningGoal || 'daily';
+    const intensity = dayData.template || this.data.config?.dailyIntensity || 'B';
+    const params = [
+      'from=checkin_share',
+      `date=${encodeURIComponent(today || '')}`,
+      `goal=${encodeURIComponent(goal)}`,
+      `intensity=${encodeURIComponent(intensity)}`
+    ].join('&');
+
+    return {
+      shareTitle: `${learningGoalText || '英语'}打卡完成：${checkedCount} 项 · 连续 ${streakValue || 0} 天`,
+      sharePath: `/pages/home/home?${params}`
+    };
+  },
+
+  onShareAppMessage() {
+    const { todayData, streak } = this.data;
+    const shareData = this.getShareCardData(todayData, streak);
+    return {
+      title: shareData.shareTitle,
+      path: shareData.sharePath,
+      imageUrl: '/assets/article-cover-english-pivot.png'
+    };
+  },
+
+  onShareTimeline() {
+    const { todayData, streak } = this.data;
+    const shareData = this.getShareCardData(todayData, streak);
+    return {
+      title: shareData.shareTitle,
+      query: shareData.sharePath.split('?')[1] || '',
+      imageUrl: '/assets/article-cover-english-pivot.png'
+    };
   },
 
   copyShareText() {
