@@ -1,0 +1,83 @@
+.skeleton-container {
+  padding: 24rpx;
+}
+
+.skeleton-section {
+  margin-bottom: 32rpx;
+}
+
+.skeleton-title {
+  width: 200rpx;
+  height: 40rpx;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 32rpx;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+.skeleton-card {
+  background: white;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.skeleton-button {
+  width: 120rpx;
+  height: 48rpx;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 8rpx;
+  margin-top: 12rpx;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.error-container {
+  padding: 80rpx 24rpx;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+}
+
+.error-message {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 32rpx;
+  line-height: 1.6;
+}
+
+.btn-retry {
+  padding: 16rpx 48rpx;
+  background: #1AAD19;
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}

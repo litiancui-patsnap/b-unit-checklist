@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "每日英语",
   "usingComponents": {
+    "loading-skeleton": "./components/loading-skeleton/loading-skeleton",
     "daily-stats": "./components/daily-stats/daily-stats",
     "daily-content": "./components/daily-content/daily-content",
     "word-review": "./components/word-review/word-review",

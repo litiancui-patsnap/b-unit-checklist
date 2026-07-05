@@ -1,6 +1,15 @@
 <view class="container">
-  <!-- 日期与完成状态组件 -->
-  <daily-stats 
+  <!-- 加载状态和错误处理 -->
+  <loading-skeleton 
+    loading="{{ isLoading }}" 
+    error="{{ loadError }}"
+    bind:retry="handleRetry"
+  />
+
+  <!-- 主内容区域 -->
+  <view wx:if="{{ !isLoading && !loadError }}">
+    <!-- 日期与完成状态组件 -->
+    <daily-stats 
     today="{{ today }}"
     learningGoalText="{{ learningGoalText }}"
     intensityText="{{ intensityText }}"
@@ -163,5 +172,6 @@
         <text class="recent-complete">{{ item.complete }}</text>
       </view>
     </view>
+  </view>
   </view>
 </view>

@@ -126,7 +126,10 @@ Page({
     ttsLoadingText: '',
     shareText: '',
     shareTitle: '我完成了今日英语打卡',
-    sharePath: '/pages/home/home?from=checkin_share'
+    sharePath: '/pages/home/home?from=checkin_share',
+    // 加载状态
+    isLoading: true,
+    loadError: ''
   },
 
   onLoad() {
@@ -163,6 +166,8 @@ Page({
 
   loadData() {
     try {
+      this.setData({ isLoading: true, loadError: '' });
+      
       const today = getToday();
       const config = getConfig();
 
@@ -240,7 +245,8 @@ Page({
           category: 'daily'
         },
         wordCategoryIndex: 0,
-        shareText: ''
+        shareText: '',
+        isLoading: false
       });
 
       this.updateCurrentTemplate();
@@ -258,11 +264,20 @@ Page({
       }
     } catch (error) {
       console.error('loadData error:', error);
+      this.setData({ 
+        isLoading: false, 
+        loadError: '数据加载失败，请重试'
+      });
       wx.showToast({
         title: '数据加载失败',
         icon: 'none'
       });
     }
+  },
+
+  // 重试加载
+  handleRetry() {
+    this.loadData();
   },
 
   updateCurrentTemplate() {

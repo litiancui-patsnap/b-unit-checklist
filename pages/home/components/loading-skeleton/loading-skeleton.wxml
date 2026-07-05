@@ -1,0 +1,22 @@
+<!-- 加载骨架屏 -->
+<view class="skeleton-container" wx:if="{{ loading }}">
+  <view class="skeleton-section">
+    <view class="skeleton-title"></view>
+    <view class="skeleton-line"></view>
+    <view class="skeleton-line short"></view>
+  </view>
+  <view class="skeleton-section">
+    <view class="skeleton-card">
+      <view class="skeleton-line"></view>
+      <view class="skeleton-line"></view>
+      <view class="skeleton-button"></view>
+    </view>
+  </view>
+</view>
+
+<!-- 错误状态 -->
+<view class="error-container" wx:if="{{ error }}">
+  <view class="error-icon">⚠️</view>
+  <view class="error-message">{{ error }}</view>
+  <button class="btn-retry" bindtap="onRetry">重试</button>
+</view>
