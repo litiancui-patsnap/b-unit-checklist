@@ -378,10 +378,15 @@ Page({
       todayData.start = {};
     }
 
-    todayData.start[id] = !todayData.start[id];
+    const newValue = !todayData.start[id];
+    todayData.start[id] = newValue;
 
-    this.setData({ todayData });
-    this.calculateProgress();
+    // 使用路径更新
+    const progress = this.calculateProgressValue();
+    this.setData({ 
+      [`todayData.start.${id}`]: newValue,
+      progress
+    });
     this.saveTodayData();
   },
 
@@ -393,10 +398,15 @@ Page({
       todayData.items = {};
     }
 
-    todayData.items[id] = !todayData.items[id];
+    const newValue = !todayData.items[id];
+    todayData.items[id] = newValue;
 
-    this.setData({ todayData });
-    this.calculateProgress();
+    // 使用路径更新
+    const progress = this.calculateProgressValue();
+    this.setData({ 
+      [`todayData.items.${id}`]: newValue,
+      progress
+    });
     this.saveTodayData();
   },
 
@@ -404,10 +414,13 @@ Page({
     const value = e.detail.value;
     const { todayData } = this.data;
     todayData.diary = value;
-    this.setData({
-      todayData,
-      shareText: todayData.complete ? this.generateShareText(todayData) : ''
-    });
+    
+    // 使用路径更新
+    const updates = { 'todayData.diary': value };
+    if (todayData.complete) {
+      updates.shareText = this.generateShareText(todayData);
+    }
+    this.setData(updates);
   },
 
   saveDiary() {
@@ -418,10 +431,13 @@ Page({
     const template = e.currentTarget.dataset.template;
     const { todayData } = this.data;
     todayData.diary = template;
-    this.setData({
-      todayData,
-      shareText: todayData.complete ? this.generateShareText(todayData) : ''
-    });
+    
+    // 使用路径更新
+    const updates = { 'todayData.diary': template };
+    if (todayData.complete) {
+      updates.shareText = this.generateShareText(todayData);
+    }
+    this.setData(updates);
     this.saveTodayData();
   },
 
@@ -505,9 +521,9 @@ Page({
 
     this.setData({ aiBusy: true });
     const result = await lookupWord(config, term, category);
-    this.setData({ aiBusy: false });
 
     if (!result) {
+      this.setData({ aiBusy: false });
       wx.showToast({
         title: '暂未查到释义',
         icon: 'none'
@@ -515,7 +531,9 @@ Page({
       return;
     }
 
+    // 合并 setData 调用
     this.setData({
+      aiBusy: false,
       wordDraft: {
         ...wordDraft,
         term: result.term || term,
@@ -549,7 +567,6 @@ Page({
 
     this.setData({ aiBusy: true });
     const suggestions = await getWordSuggestions(config, goal, Math.min(3, remain));
-    this.setData({ aiBusy: false });
 
     const existingTerms = new Set((todayData.words || []).map(word => String(word.term || '').toLowerCase()));
     const newWords = suggestions
@@ -557,6 +574,7 @@ Page({
       .map(item => createWord(item, today, generateId('word')));
 
     if (!newWords.length) {
+      this.setData({ aiBusy: false });
       wx.showToast({
         title: '暂无可添加推荐词',
         icon: 'none'
@@ -570,10 +588,16 @@ Page({
     ].slice(0, 10);
 
     this.autoCheckTaskByType(todayData, 'word');
-    this.setData({ todayData });
+    
+    // 合并 setData 调用，使用路径更新
+    const progress = this.calculateProgressValue();
+    this.setData({ 
+      aiBusy: false,
+      todayData,
+      progress
+    });
     this.saveTodayData();
     this.refreshLearningState();
-    this.calculateProgress();
 
     wx.showToast({
       title: '已添加推荐词',
@@ -804,14 +828,19 @@ Page({
       todayData.contentChecks = {};
     }
 
-    todayData.contentChecks[key] = !todayData.contentChecks[key];
-    if (todayData.contentChecks[key]) {
+    const newValue = !todayData.contentChecks[key];
+    todayData.contentChecks[key] = newValue;
+    if (newValue) {
       this.autoCheckTaskByType(todayData, type);
     }
 
-    this.setData({ todayData });
+    // 使用路径更新减少数据传输
+    const progress = this.calculateProgressValue();
+    this.setData({ 
+      [`todayData.contentChecks.${key}`]: newValue,
+      progress
+    });
     this.saveTodayData();
-    this.calculateProgress();
   },
 
   answerQuiz(e) {
@@ -868,6 +897,14 @@ Page({
       planCompletedCount: checkedItems,
       planTotalCount: totalItems
     });
+  },
+
+  // 用于在需要计算但不立即更新 UI 的场景
+  calculateProgressValue() {
+    const { todayData, currentTemplate } = this.data;
+    const totalItems = currentTemplate?.items?.length || 0;
+    const checkedItems = currentTemplate ? countCheckedByItems(todayData.items, currentTemplate.items) : 0;
+    return totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
   },
 
   completeToday() {
