@@ -1,0 +1,110 @@
+.word-review-section {
+  padding: 24rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.review-summary {
+  padding: 12rpx 20rpx;
+  background: #FFF7E6;
+  border-radius: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.summary-text {
+  font-size: 26rpx;
+  color: #AD6800;
+}
+
+.word-item {
+  background: white;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.word-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12rpx;
+}
+
+.word-term-group {
+  flex: 1;
+}
+
+.word-term {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4rpx;
+}
+
+.word-meta {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 4rpx;
+}
+
+.word-phonetic {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.word-category {
+  padding: 2rpx 8rpx;
+  background: #F0F0F0;
+  color: #666;
+  font-size: 22rpx;
+  border-radius: 8rpx;
+}
+
+.word-translation {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 12rpx;
+}
+
+.word-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
+.mini-btn {
+  flex: 1;
+  padding: 8rpx 20rpx;
+  font-size: 24rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid #ddd;
+  background: white;
+  color: #666;
+}
+
+.mini-btn.primary {
+  background: #1AAD19;
+  color: white;
+  border-color: #1AAD19;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60rpx 24rpx;
+}
+
+.empty-state.compact {
+  padding: 40rpx 24rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+}

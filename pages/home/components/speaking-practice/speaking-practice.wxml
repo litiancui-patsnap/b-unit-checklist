@@ -1,0 +1,15 @@
+<!-- 场景口语模板 -->
+<view class="section speaking-section">
+  <view class="section-title">场景口语模板</view>
+  <view class="scene-summary">
+    <text class="summary-text">已跟读 {{ sceneStats.completedLines }}/{{ sceneStats.totalLines }} 句</text>
+  </view>
+  <view class="scene-card" wx:for="{{ sceneTemplates }}" wx:key="id" wx:for-item="scene">
+    <view class="scene-title">{{ scene.title }}</view>
+    <view class="scene-line" wx:for="{{ scene.lines }}" wx:key="id" wx:for-item="line">
+      <checkbox checked="{{ line.checked }}" bindtap="onToggleSceneLine" data-scene="{{ scene.id }}" data-line="{{ line.id }}" />
+      <text class="scene-text">{{ line.text }}</text>
+      <view class="sound-btn scene-sound-btn" bindtap="onPlayAudio" data-text="{{ line.audioText }}" data-src="{{ line.audioSrc }}">🔊</view>
+    </view>
+  </view>
+</view>

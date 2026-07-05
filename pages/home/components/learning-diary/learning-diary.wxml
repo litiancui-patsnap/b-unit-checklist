@@ -1,0 +1,22 @@
+<!-- 英文日记 -->
+<view class="section diary-section">
+  <view class="section-header-row diary-header-row">
+    <view class="section-title">英文日记一句话</view>
+    <view class="source-badge">{{ diaryTemplateSourceText }}</view>
+  </view>
+  <view class="diary-template-list" wx:if="{{ diaryTemplates.length > 0 }}">
+    <view class="diary-template" wx:for="{{ diaryTemplates }}" wx:key="id" bindtap="onUseTemplate" data-template="{{ item.text }}">
+      <text class="diary-template-text">{{ item.text }}</text>
+      <view class="sound-btn diary-sound-btn" catchtap="onPlayAudio" data-text="{{ item.audioText }}" data-src="{{ item.audioSrc }}">🔊</view>
+    </view>
+  </view>
+  <textarea 
+    class="diary-input" 
+    value="{{ diaryText }}" 
+    bindinput="onDiaryInput" 
+    bindblur="onDiaryBlur" 
+    maxlength="200" 
+    placeholder="Write one sentence in English today." 
+    show-confirm-bar="{{ false }}" />
+  <view class="diary-hint">写一句就算数，例如：I learned English for 15 minutes today.</view>
+</view>

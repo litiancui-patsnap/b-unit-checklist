@@ -1,0 +1,55 @@
+<!-- 今日内容输入 -->
+<view class="section content-section" wx:if="{{ dailyContent }}">
+  <view class="section-header-row">
+    <view class="section-title">今日输入</view>
+    <view class="source-badge">{{ contentSourceText }}</view>
+  </view>
+  <view class="content-card">
+    <view class="content-card-head">
+      <text class="content-label">每日一句</text>
+      <view class="sound-btn" bindtap="onPlayAudio" data-text="{{ dailyContent.sentence }}">🔊</view>
+    </view>
+    <view class="content-text strong">{{ dailyContent.sentence }}</view>
+    <button class="mini-btn primary" bindtap="onToggleCheck" data-key="sentence" data-type="listen">
+      {{ contentChecks.sentence ? '已完成' : '完成听读' }}
+    </button>
+  </view>
+  <view class="content-card">
+    <view class="content-card-head">
+      <text class="content-label">每日短文</text>
+      <view class="sound-btn" bindtap="onPlayAudio" data-text="{{ dailyContent.shortReading }}">🔊</view>
+    </view>
+    <view class="content-text">{{ dailyContent.shortReading }}</view>
+    <button class="mini-btn primary" bindtap="onToggleCheck" data-key="shortReading" data-type="read">
+      {{ contentChecks.shortReading ? '已阅读' : '完成阅读' }}
+    </button>
+  </view>
+  <view class="content-card">
+    <view class="content-card-head">
+      <text class="content-label">场景表达</text>
+      <view class="sound-btn" bindtap="onPlayAudio" data-text="{{ dailyContent.sceneExpression }}">🔊</view>
+    </view>
+    <view class="content-text strong">{{ dailyContent.sceneExpression }}</view>
+    <button class="mini-btn primary" bindtap="onToggleCheck" data-key="sceneExpression" data-type="speak">
+      {{ contentChecks.sceneExpression ? '已跟读' : '完成跟读' }}
+    </button>
+  </view>
+  <view class="content-card">
+    <view class="content-card-head">
+      <text class="content-label">长难句拆解</text>
+      <view class="sound-btn" bindtap="onPlayAudio" data-text="{{ dailyContent.longSentence }}">🔊</view>
+    </view>
+    <view class="content-text">{{ dailyContent.longSentence }}</view>
+    <view class="content-text-secondary">{{ dailyContent.longSentenceNote }}</view>
+    <button class="mini-btn primary" bindtap="onToggleCheck" data-key="longSentence" data-type="read">
+      {{ contentChecks.longSentence ? '已理解' : '完成理解' }}
+    </button>
+  </view>
+</view>
+
+<view class="section content-section" wx:else>
+  <view class="section-title">今日输入</view>
+  <view class="empty-state">
+    <text class="empty-text">加载中...</text>
+  </view>
+</view>

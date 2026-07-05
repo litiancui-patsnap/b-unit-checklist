@@ -1,0 +1,27 @@
+<!-- 日期与完成状态 -->
+<view class="section date-section">
+  <view class="date-display">{{ today }}</view>
+  <view class="goal-display">{{ learningGoalText }} · {{ intensityText }}</view>
+  <view class="complete-badge" wx:if="{{ complete }}">今日英语完成 ✅</view>
+</view>
+
+<!-- 统计区 -->
+<view class="section stats-section">
+  <view class="stat-item">
+    <text class="stat-label">今日进度</text>
+    <text class="stat-value">{{ progress }}%</text>
+  </view>
+  <view class="stat-item">
+    <text class="stat-label">预计用时</text>
+    <text class="stat-value">{{ planTotalMinutes }}分</text>
+  </view>
+  <view class="stat-item">
+    <text class="stat-label">连续学习</text>
+    <text class="stat-value">{{ streak }}天</text>
+  </view>
+</view>
+
+<!-- 提醒状态 -->
+<view class="section reminder-section" wx:if="{{ reminderEnabled }}">
+  <text class="reminder-text">⏰ 英语学习提醒: {{ reminderTime }}</text>
+</view>

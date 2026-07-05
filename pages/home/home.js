@@ -117,6 +117,9 @@ Page({
       total: 0,
       completed: false
     },
+    currentQuizIndex: 0,
+    quizScore: 0,
+    quizAnswered: false,
     dailyContent: null,
     contentSourceText: '离线内容',
     aiBusy: false,
@@ -1124,7 +1127,50 @@ Page({
       sharePath: `/pages/home/home?${params}`
     };
   },
+  // 组件事件处理方法
+  selectQuizOption(e) {
+    const { index } = e.detail;
+    const currentQuestion = this.data.quizQuestions[this.data.currentQuizIndex];
+    if (!currentQuestion || this.data.quizAnswered) return;
 
+    const isCorrect = index === currentQuestion.correctIndex;
+    const updatedOptions = currentQuestion.options.map((opt, i) => ({
+      text: opt.text || opt,
+      selected: i === index,
+      correct: i === currentQuestion.correctIndex
+    }));
+
+    this.setData({
+      [`quizQuestions[${this.data.currentQuizIndex}].options`]: updatedOptions,
+      quizAnswered: true,
+      quizScore: isCorrect ? this.data.quizScore + 10 : this.data.quizScore
+    });
+  },
+
+  nextQuizQuestion() {
+    const nextIndex = this.data.currentQuizIndex + 1;
+    if (nextIndex >= this.data.quizQuestions.length) {
+      wx.showToast({ title: `测试完成！得分 ${this.data.quizScore}`, icon: 'success' });
+      return;
+    }
+    this.setData({
+      currentQuizIndex: nextIndex,
+      quizAnswered: false
+    });
+  },
+
+  generateQuiz() {
+    // 调用已有的生成测试逻辑
+    const words = this.data.todayData.words.filter(w => w.translation);
+    if (words.length < 2) {
+      wx.showToast({ title: '至少需要2个单词', icon: 'none' });
+      return;
+    }
+    // 这里需要根据实际逻辑生成测试题
+    wx.showToast({ title: '生成测试中...', icon: 'loading' });
+  },
+
+  // 分享相关
   onShareAppMessage() {
     const { todayData, streak } = this.data;
     const shareData = this.getShareCardData(todayData, streak);

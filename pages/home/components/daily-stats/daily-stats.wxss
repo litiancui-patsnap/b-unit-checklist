@@ -1,0 +1,71 @@
+/* 日期与完成状态 */
+.date-section {
+  text-align: center;
+  padding: 32rpx 24rpx;
+}
+
+.date-display {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.goal-display {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.complete-badge {
+  display: inline-block;
+  padding: 8rpx 20rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 26rpx;
+  border-radius: 20rpx;
+  margin-top: 12rpx;
+}
+
+/* 统计区 */
+.stats-section {
+  display: flex;
+  justify-content: space-around;
+  padding: 24rpx;
+  background: white;
+  border-radius: 16rpx;
+  margin: 0 24rpx 24rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.stat-value {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1AAD19;
+}
+
+/* 提醒状态 */
+.reminder-section {
+  padding: 16rpx 24rpx;
+  background: #FFF7E6;
+  border-left: 4rpx solid #FFA940;
+  margin: 0 24rpx 24rpx;
+  border-radius: 8rpx;
+}
+
+.reminder-text {
+  font-size: 26rpx;
+  color: #AD6800;
+}

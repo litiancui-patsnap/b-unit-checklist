@@ -1,0 +1,65 @@
+.speaking-section {
+  padding: 24rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.scene-summary {
+  padding: 12rpx 20rpx;
+  background: #E6F7FF;
+  border-radius: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.summary-text {
+  font-size: 26rpx;
+  color: #0050B3;
+}
+
+.scene-card {
+  background: white;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.scene-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.scene-line {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.scene-line:last-child {
+  border-bottom: none;
+}
+
+.scene-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #666;
+  margin: 0 12rpx;
+}
+
+.sound-btn {
+  padding: 4rpx 8rpx;
+  font-size: 28rpx;
+  cursor: pointer;
+}
+
+.scene-sound-btn {
+  font-size: 24rpx;
+}

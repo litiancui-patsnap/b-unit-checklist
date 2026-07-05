@@ -1,0 +1,28 @@
+<!-- 单词复习提醒 -->
+<view class="section word-review-section">
+  <view class="section-title">今日复习</view>
+  <view wx:if="{{ reviewQueue.length > 0 }}">
+    <view class="review-summary">
+      <text class="summary-text">{{ reviewQueue.length }} 个单词到期复习</text>
+    </view>
+    <view class="word-item" wx:for="{{ reviewQueue }}" wx:key="id" wx:for-item="word">
+      <view class="word-head">
+        <view class="word-term-group">
+          <text class="word-term">{{ word.term }}</text>
+          <view class="word-meta">
+            <text class="word-phonetic" wx:if="{{ word.phonetic }}">{{ word.phonetic }}</text>
+            <text class="word-category">{{ word.categoryLabel }}</text>
+          </view>
+        </view>
+      </view>
+      <text class="word-translation">{{ word.translation }}</text>
+      <view class="word-actions">
+        <button class="mini-btn" bindtap="onMarkReview" data-date="{{ word.sourceDate }}" data-id="{{ word.id }}" data-mastered="false">已复习</button>
+        <button class="mini-btn primary" bindtap="onMarkReview" data-date="{{ word.sourceDate }}" data-id="{{ word.id }}" data-mastered="true">已掌握</button>
+      </view>
+    </view>
+  </view>
+  <view class="empty-state compact" wx:else>
+    <text class="empty-text">暂无到期复习词</text>
+  </view>
+</view>

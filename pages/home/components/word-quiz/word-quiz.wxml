@@ -1,0 +1,34 @@
+<!-- 单词小测 -->
+<view class="section quiz-section">
+  <view class="section-title">单词四选一小测</view>
+  <view wx:if="{{ quizQuestions.length > 0 }}">
+    <view class="quiz-progress">
+      <text class="progress-text">{{ currentQuizIndex + 1 }}/{{ quizQuestions.length }}</text>
+      <text class="score-text">{{ quizScore }} 分</text>
+    </view>
+    <view class="quiz-card">
+      <view class="quiz-question">
+        <text class="quiz-term">{{ currentQuestion.term }}</text>
+        <view class="sound-btn" bindtap="onPlayAudio" data-text="{{ currentQuestion.term }}">🔊</view>
+      </view>
+      <view class="quiz-options">
+        <button 
+          class="quiz-option {{ option.selected ? (option.correct ? 'correct' : 'wrong') : '' }}" 
+          wx:for="{{ currentQuestion.options }}" 
+          wx:key="index" 
+          bindtap="onSelectOption" 
+          data-index="{{ index }}"
+          disabled="{{ quizAnswered }}">
+          {{ option.text }}
+        </button>
+      </view>
+      <view class="quiz-actions" wx:if="{{ quizAnswered }}">
+        <button class="btn-primary" bindtap="onNextQuestion">{{ isLastQuestion ? '完成测试' : '下一题' }}</button>
+      </view>
+    </view>
+  </view>
+  <view class="empty-state" wx:else>
+    <text class="empty-text">暂无测试题目</text>
+    <button class="btn-default" bindtap="onGenerateQuiz">生成测试</button>
+  </view>
+</view>

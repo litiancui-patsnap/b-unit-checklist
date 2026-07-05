@@ -1,26 +1,14 @@
 <view class="container">
-  <!-- 日期与完成状态 -->
-  <view class="section date-section">
-    <view class="date-display">{{ today }}</view>
-    <view class="goal-display">{{ learningGoalText }} · {{ intensityText }}</view>
-    <view class="complete-badge" wx:if="{{ todayData.complete }}">今日英语完成 ✅</view>
-  </view>
-
-  <!-- 统计区 -->
-  <view class="section stats-section">
-    <view class="stat-item">
-      <text class="stat-label">今日进度</text>
-      <text class="stat-value">{{ progress }}%</text>
-    </view>
-    <view class="stat-item">
-      <text class="stat-label">预计用时</text>
-      <text class="stat-value">{{ planTotalMinutes }}分</text>
-    </view>
-    <view class="stat-item">
-      <text class="stat-label">连续学习</text>
-      <text class="stat-value">{{ streak }}天</text>
-    </view>
-  </view>
+  <!-- 日期与完成状态组件 -->
+  <daily-stats 
+    today="{{ today }}"
+    learningGoalText="{{ learningGoalText }}"
+    intensityText="{{ intensityText }}"
+    todayComplete="{{ todayData.complete }}"
+    progress="{{ progress }}"
+    planTotalMinutes="{{ planTotalMinutes }}"
+    streak="{{ streak }}"
+  />
 
   <!-- 提醒状态 -->
   <view class="section reminder-section" wx:if="{{ reminderEnabled }}">
@@ -44,46 +32,14 @@
     </view>
   </view>
 
-  <!-- 今日内容输入 -->
-  <view class="section content-section" wx:if="{{ dailyContent }}">
-    <view class="section-header-row">
-      <view class="section-title">今日输入</view>
-      <view class="source-badge">{{ contentSourceText }}</view>
-    </view>
-    <view class="content-card">
-      <view class="content-card-head">
-        <text class="content-label">每日一句</text>
-        <view class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.sentence }}">🔊</view>
-      </view>
-      <view class="content-text strong">{{ dailyContent.sentence }}</view>
-      <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="sentence" data-type="listen">{{ todayData.contentChecks.sentence ? '已完成' : '完成听读' }}</button>
-    </view>
-    <view class="content-card">
-      <view class="content-card-head">
-        <text class="content-label">每日短文</text>
-        <view class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.shortReading }}">🔊</view>
-      </view>
-      <view class="content-text">{{ dailyContent.shortReading }}</view>
-      <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="shortReading" data-type="read">{{ todayData.contentChecks.shortReading ? '已阅读' : '完成阅读' }}</button>
-    </view>
-    <view class="content-card">
-      <view class="content-card-head">
-        <text class="content-label">场景表达</text>
-        <view class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.sceneExpression }}">🔊</view>
-      </view>
-      <view class="content-text strong">{{ dailyContent.sceneExpression }}</view>
-      <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="sceneExpression" data-type="speak">{{ todayData.contentChecks.sceneExpression ? '已跟读' : '完成跟读' }}</button>
-    </view>
-    <view class="content-card">
-      <view class="content-card-head">
-        <text class="content-label">长难句拆解</text>
-        <view class="sound-btn" bindtap="playPronunciation" data-text="{{ dailyContent.longSentence }}">🔊</view>
-      </view>
-      <view class="content-text">{{ dailyContent.longSentence }}</view>
-      <button class="mini-btn primary" bindtap="toggleContentCheck" data-key="longSentence" data-type="read">{{ todayData.contentChecks.longSentence ? '已拆解' : '完成拆解' }}</button>
-    </view>
-    <button class="btn-default" bindtap="refreshDailyContent">{{ aiBusy ? '生成中...' : '刷新今日内容' }}</button>
-  </view>
+  <!-- 今日内容输入组件 -->
+  <daily-content 
+    dailyContent="{{ dailyContent }}"
+    contentSourceText="{{ contentSourceText }}"
+    contentChecks="{{ todayData.contentChecks }}"
+    bind:playaudio="playPronunciation"
+    bind:togglecheck="toggleContentCheck"
+  />
 
   <!-- 今日单词本 -->
   <view class="section wordbook-section">
@@ -134,93 +90,42 @@
     </view>
   </view>
 
-  <!-- 复习提醒队列 -->
-  <view class="section review-section">
-    <view class="section-title">复习提醒队列</view>
-    <view class="review-list" wx:if="{{ reviewQueue.length > 0 }}">
-      <view class="review-card" wx:for="{{ reviewQueue }}" wx:key="id" wx:for-item="word">
-        <view class="word-main">
-          <view class="word-title-row">
-            <text class="word-term">{{ word.term }}</text>
-            <view class="sound-btn" bindtap="playPronunciation" data-text="{{ word.term }}" data-src="{{ word.audioSrc }}">🔊</view>
-          </view>
-          <text class="word-status">{{ word.sourceDate }}</text>
-        </view>
-        <view class="word-meta-row">
-          <text class="word-phonetic" wx:if="{{ word.phonetic }}">{{ word.phonetic }}</text>
-          <text class="word-category">{{ word.categoryLabel }}</text>
-        </view>
-        <text class="word-translation">{{ word.translation }}</text>
-        <view class="word-actions">
-          <button class="mini-btn" bindtap="markReviewWord" data-date="{{ word.sourceDate }}" data-id="{{ word.id }}" data-mastered="false">已复习</button>
-          <button class="mini-btn primary" bindtap="markReviewWord" data-date="{{ word.sourceDate }}" data-id="{{ word.id }}" data-mastered="true">已掌握</button>
-        </view>
-      </view>
-    </view>
-    <view class="empty-state compact" wx:else>
-      <text class="empty-text">暂无到期复习词</text>
-    </view>
-  </view>
+  <!-- 单词复习组件 -->
+  <word-review 
+    reviewQueue="{{ reviewQueue }}"
+    bind:markreview="markReviewWord"
+  />
 
-  <!-- 场景口语模板 -->
-  <view class="section speaking-section">
-    <view class="section-title">场景口语模板</view>
-    <view class="scene-summary">
-      <text class="summary-text">已跟读 {{ sceneStats.completedLines }}/{{ sceneStats.totalLines }} 句</text>
-    </view>
-    <view class="scene-card" wx:for="{{ sceneTemplates }}" wx:key="id" wx:for-item="scene">
-      <view class="scene-title">{{ scene.title }}</view>
-      <view class="scene-line" wx:for="{{ scene.lines }}" wx:key="id" wx:for-item="line">
-        <checkbox checked="{{ line.checked }}" bindtap="toggleSceneLine" data-scene="{{ scene.id }}" data-line="{{ line.id }}" />
-        <text class="scene-text">{{ line.text }}</text>
-        <view class="sound-btn scene-sound-btn" bindtap="playPronunciation" data-text="{{ line.audioText }}" data-src="{{ line.audioSrc }}">🔊</view>
-      </view>
-    </view>
-  </view>
+  <!-- 场景口语组件 -->
+  <speaking-practice 
+    sceneTemplates="{{ sceneTemplates }}"
+    sceneStats="{{ sceneStats }}"
+    bind:togglescene="toggleSceneLine"
+    bind:playaudio="playPronunciation"
+  />
 
-  <!-- 单词小测 -->
-  <view class="section quiz-section">
-    <view class="section-title">单词四选一小测</view>
-    <view wx:if="{{ quizQuestions.length > 0 }}">
-      <view class="quiz-summary">
-        <text class="summary-text">完成后会自动计入一个单词任务</text>
-        <text class="summary-text">得分 {{ quizResult.score }}/{{ quizResult.total }}</text>
-      </view>
-      <view class="quiz-card" wx:for="{{ quizQuestions }}" wx:key="id" wx:for-item="question">
-        <view class="quiz-prompt">{{ question.prompt }}</view>
-        <view class="quiz-options">
-          <button
-            class="quiz-option {{ todayData.quiz.answers[question.id] === option ? 'selected' : '' }} {{ todayData.quiz.answers[question.id] && question.answer === option ? 'correct' : '' }}"
-            wx:for="{{ question.options }}"
-            wx:key="*this"
-            wx:for-item="option"
-            bindtap="answerQuiz"
-            data-question="{{ question.id }}"
-            data-option="{{ option }}"
-          >{{ option }}</button>
-        </view>
-      </view>
-    </view>
-    <view class="empty-state compact" wx:else>
-      <text class="empty-text">至少添加 2 个带中文含义的单词后生成小测</text>
-    </view>
-  </view>
+  <!-- 单词小测组件 -->
+  <word-quiz 
+    quizQuestions="{{ quizQuestions }}"
+    currentQuizIndex="{{ currentQuizIndex }}"
+    quizScore="{{ quizScore }}"
+    quizAnswered="{{ quizAnswered }}"
+    bind:selectoption="selectQuizOption"
+    bind:nextquestion="nextQuizQuestion"
+    bind:generatequiz="generateQuiz"
+    bind:playaudio="playPronunciation"
+  />
 
-  <!-- 英文日记 -->
-  <view class="section diary-section">
-    <view class="section-header-row diary-header-row">
-      <view class="section-title">英文日记一句话</view>
-      <view class="source-badge">{{ diaryTemplateSourceText }}</view>
-    </view>
-    <view class="diary-template-list" wx:if="{{ diaryTemplates.length > 0 }}">
-      <view class="diary-template" wx:for="{{ diaryTemplates }}" wx:key="id" bindtap="useDiaryTemplate" data-template="{{ item.text }}">
-        <text class="diary-template-text">{{ item.text }}</text>
-        <view class="sound-btn diary-sound-btn" catchtap="playPronunciation" data-text="{{ item.audioText }}" data-src="{{ item.audioSrc }}">🔊</view>
-      </view>
-    </view>
-    <textarea class="diary-input" value="{{ todayData.diary }}" bindinput="onDiaryInput" bindblur="saveDiary" maxlength="200" placeholder="Write one sentence in English today." show-confirm-bar="{{ false }}" />
-    <view class="diary-hint">写一句就算数，例如：I learned English for 15 minutes today.</view>
-  </view>
+  <!-- 英文日记组件 -->
+  <learning-diary 
+    diaryText="{{ todayData.diary }}"
+    diaryTemplates="{{ diaryTemplates }}"
+    diaryTemplateSourceText="{{ diaryTemplateSourceText }}"
+    bind:diaryinput="onDiaryInput"
+    bind:diaryblur="saveDiary"
+    bind:usetemplate="useDiaryTemplate"
+    bind:playaudio="playPronunciation"
+  />
 
   <!-- 操作按钮 -->
   <view class="section actions-section">

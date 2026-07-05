@@ -1,0 +1,82 @@
+.diary-section {
+  padding: 24rpx;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.diary-header-row {
+  margin-bottom: 12rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.source-badge {
+  padding: 4rpx 12rpx;
+  background: #F0F0F0;
+  color: #666;
+  font-size: 22rpx;
+  border-radius: 12rpx;
+}
+
+.diary-template-list {
+  margin-bottom: 16rpx;
+}
+
+.diary-template {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 16rpx;
+  background: #F7F7F7;
+  border-radius: 8rpx;
+  margin-bottom: 8rpx;
+  cursor: pointer;
+}
+
+.diary-template:active {
+  background: #EFEFEF;
+}
+
+.diary-template-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #666;
+}
+
+.sound-btn {
+  padding: 4rpx 8rpx;
+  font-size: 28rpx;
+  cursor: pointer;
+}
+
+.diary-sound-btn {
+  font-size: 24rpx;
+}
+
+.diary-input {
+  width: 100%;
+  min-height: 120rpx;
+  padding: 16rpx;
+  border: 2rpx solid #E0E0E0;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  line-height: 1.5;
+  background: white;
+  box-sizing: border-box;
+}
+
+.diary-hint {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #999;
+  line-height: 1.4;
+}
