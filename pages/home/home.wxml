@@ -13,7 +13,7 @@
     today="{{ today }}"
     learningGoalText="{{ learningGoalText }}"
     intensityText="{{ intensityText }}"
-    todayComplete="{{ todayData.complete }}"
+    complete="{{ todayData.complete }}"
     progress="{{ progress }}"
     planTotalMinutes="{{ planTotalMinutes }}"
     streak="{{ streak }}"
@@ -116,6 +116,7 @@
   <!-- 单词小测组件 -->
   <word-quiz 
     quizQuestions="{{ quizQuestions }}"
+    quizAnswers="{{ todayData.quiz.answers }}"
     currentQuizIndex="{{ currentQuizIndex }}"
     quizScore="{{ quizScore }}"
     quizAnswered="{{ quizAnswered }}"

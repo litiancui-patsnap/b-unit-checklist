@@ -60,6 +60,13 @@ const DIARY_TEMPLATE_AUDIO_MAP = {
   }
 };
 
+function getEventData(event = {}) {
+  return {
+    ...(event.currentTarget?.dataset || {}),
+    ...(event.detail || {})
+  };
+}
+
 Page({
   data: {
     today: '',
@@ -368,6 +375,8 @@ Page({
     const allWords = collectWordsFromDays(allDays, today);
     const quizQuestions = buildQuizQuestions([...reviewQueue, ...allWords], 5);
     const quizResult = getQuizResult(quizQuestions, todayData.quiz?.answers || {});
+    const currentQuizIndex = Math.min(this.data.currentQuizIndex || 0, Math.max(quizQuestions.length - 1, 0));
+    const currentQuestion = quizQuestions[currentQuizIndex];
     const sceneTemplates = SPEAKING_SCENES.map(scene => ({
       ...scene,
       lines: scene.lines.map(line => ({
@@ -381,7 +390,10 @@ Page({
       sceneTemplates,
       sceneStats: getSceneStats(todayData.scenePractice || {}),
       quizQuestions,
-      quizResult
+      quizResult,
+      currentQuizIndex,
+      quizScore: quizResult.score,
+      quizAnswered: Boolean(currentQuestion && todayData.quiz?.answers?.[currentQuestion.id])
     });
   },
 
@@ -397,10 +409,10 @@ Page({
     todayData.start[id] = newValue;
 
     // 使用路径更新
-    const progress = this.calculateProgressValue();
+    const progressState = this.getProgressState();
     this.setData({ 
       [`todayData.start.${id}`]: newValue,
-      progress
+      ...progressState
     });
     this.saveTodayData();
   },
@@ -417,10 +429,10 @@ Page({
     todayData.items[id] = newValue;
 
     // 使用路径更新
-    const progress = this.calculateProgressValue();
+    const progressState = this.getProgressState();
     this.setData({ 
       [`todayData.items.${id}`]: newValue,
-      progress
+      ...progressState
     });
     this.saveTodayData();
   },
@@ -443,7 +455,10 @@ Page({
   },
 
   useDiaryTemplate(e) {
-    const template = e.currentTarget.dataset.template;
+    const { template } = getEventData(e);
+    if (!template) {
+      return;
+    }
     const { todayData } = this.data;
     todayData.diary = template;
     
@@ -605,11 +620,11 @@ Page({
     this.autoCheckTaskByType(todayData, 'word');
     
     // 合并 setData 调用，使用路径更新
-    const progress = this.calculateProgressValue();
+    const progressState = this.getProgressState();
     this.setData({ 
       aiBusy: false,
       todayData,
-      progress
+      ...progressState
     });
     this.saveTodayData();
     this.refreshLearningState();
@@ -704,9 +719,13 @@ Page({
   },
 
   markReviewWord(e) {
-    const sourceDate = e.currentTarget.dataset.date;
-    const id = e.currentTarget.dataset.id;
-    const mastered = e.currentTarget.dataset.mastered === true || e.currentTarget.dataset.mastered === 'true';
+    const eventData = getEventData(e);
+    const sourceDate = eventData.date;
+    const id = eventData.id;
+    const mastered = eventData.mastered === true || eventData.mastered === 'true';
+    if (!sourceDate || !id) {
+      return;
+    }
     const { today, todayData } = this.data;
 
     if (sourceDate === today) {
@@ -733,8 +752,12 @@ Page({
   },
 
   toggleSceneLine(e) {
-    const sceneId = e.currentTarget.dataset.scene;
-    const lineId = e.currentTarget.dataset.line;
+    const eventData = getEventData(e);
+    const sceneId = eventData.scene;
+    const lineId = eventData.line;
+    if (!sceneId || !lineId) {
+      return;
+    }
     const { todayData } = this.data;
 
     if (!todayData.scenePractice) {
@@ -751,8 +774,9 @@ Page({
   },
 
   playPronunciation(e) {
-    const text = normalizePronunciationText(e.currentTarget.dataset.text || '');
-    const sourceUrl = getPronunciationAudioSource(e.currentTarget.dataset.src || '');
+    const eventData = getEventData(e);
+    const text = normalizePronunciationText(eventData.text || '');
+    const sourceUrl = getPronunciationAudioSource(eventData.src || '');
     if (!text) {
       wx.showToast({
         title: '暂无可发音内容',
@@ -835,8 +859,12 @@ Page({
   },
 
   toggleContentCheck(e) {
-    const key = e.currentTarget.dataset.key;
-    const type = e.currentTarget.dataset.type || 'read';
+    const eventData = getEventData(e);
+    const key = eventData.key;
+    const type = eventData.type || 'read';
+    if (!key) {
+      return;
+    }
     const { todayData } = this.data;
 
     if (!todayData.contentChecks) {
@@ -850,10 +878,11 @@ Page({
     }
 
     // 使用路径更新减少数据传输
-    const progress = this.calculateProgressValue();
+    const progressState = this.getProgressState();
     this.setData({ 
       [`todayData.contentChecks.${key}`]: newValue,
-      progress
+      'todayData.items': todayData.items,
+      ...progressState
     });
     this.saveTodayData();
   },
@@ -900,26 +929,18 @@ Page({
   },
 
   calculateProgress() {
-    const { todayData, currentTemplate } = this.data;
-
-    const totalItems = currentTemplate?.items?.length || 0;
-    const checkedItems = currentTemplate ? countCheckedByItems(todayData.items, currentTemplate.items) : 0;
-
-    const progress = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
-
-    this.setData({
-      progress,
-      planCompletedCount: checkedItems,
-      planTotalCount: totalItems
-    });
+    this.setData(this.getProgressState());
   },
 
-  // 用于在需要计算但不立即更新 UI 的场景
-  calculateProgressValue() {
+  getProgressState() {
     const { todayData, currentTemplate } = this.data;
     const totalItems = currentTemplate?.items?.length || 0;
     const checkedItems = currentTemplate ? countCheckedByItems(todayData.items, currentTemplate.items) : 0;
-    return totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+    return {
+      progress: totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0,
+      planCompletedCount: checkedItems,
+      planTotalCount: totalItems
+    };
   },
 
   completeToday() {
@@ -1185,41 +1206,62 @@ Page({
     const currentQuestion = this.data.quizQuestions[this.data.currentQuizIndex];
     if (!currentQuestion || this.data.quizAnswered) return;
 
-    const isCorrect = index === currentQuestion.correctIndex;
-    const updatedOptions = currentQuestion.options.map((opt, i) => ({
-      text: opt.text || opt,
-      selected: i === index,
-      correct: i === currentQuestion.correctIndex
-    }));
+    const option = currentQuestion.options[index];
+    if (!option) return;
+
+    const { todayData, quizQuestions } = this.data;
+    todayData.quiz = todayData.quiz || { answers: {} };
+    todayData.quiz.answers = todayData.quiz.answers || {};
+    todayData.quiz.answers[currentQuestion.id] = option;
+    const quizResult = getQuizResult(quizQuestions, todayData.quiz.answers);
+    todayData.quiz.score = quizResult.score;
+    todayData.quiz.completed = quizResult.completed;
+
+    if (quizResult.completed) {
+      this.autoCheckTaskByType(todayData, 'word');
+    }
 
     this.setData({
-      [`quizQuestions[${this.data.currentQuizIndex}].options`]: updatedOptions,
+      todayData,
+      quizResult,
       quizAnswered: true,
-      quizScore: isCorrect ? this.data.quizScore + 10 : this.data.quizScore
+      quizScore: quizResult.score,
+      ...this.getProgressState()
     });
+    this.saveTodayData();
   },
 
   nextQuizQuestion() {
     const nextIndex = this.data.currentQuizIndex + 1;
     if (nextIndex >= this.data.quizQuestions.length) {
-      wx.showToast({ title: `测试完成！得分 ${this.data.quizScore}`, icon: 'success' });
+      wx.showToast({
+        title: `测试完成 ${this.data.quizResult.score}/${this.data.quizResult.total}`,
+        icon: 'success'
+      });
       return;
     }
+    const nextQuestion = this.data.quizQuestions[nextIndex];
     this.setData({
       currentQuizIndex: nextIndex,
-      quizAnswered: false
+      quizAnswered: Boolean(this.data.todayData.quiz?.answers?.[nextQuestion.id])
     });
   },
 
   generateQuiz() {
-    // 调用已有的生成测试逻辑
-    const words = this.data.todayData.words.filter(w => w.translation);
-    if (words.length < 2) {
+    const allDays = {
+      ...getAllDays(),
+      [this.data.today]: this.data.todayData
+    };
+    const words = collectWordsFromDays(allDays, this.data.today);
+    if (words.filter(word => word.translation).length < 2) {
       wx.showToast({ title: '至少需要2个单词', icon: 'none' });
       return;
     }
-    // 这里需要根据实际逻辑生成测试题
-    wx.showToast({ title: '生成测试中...', icon: 'loading' });
+    this.setData({
+      currentQuizIndex: 0,
+      quizAnswered: false
+    });
+    this.refreshLearningState();
   },
 
   // 分享相关

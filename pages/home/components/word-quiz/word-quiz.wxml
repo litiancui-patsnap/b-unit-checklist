@@ -4,22 +4,22 @@
   <view wx:if="{{ quizQuestions.length > 0 }}">
     <view class="quiz-progress">
       <text class="progress-text">{{ currentQuizIndex + 1 }}/{{ quizQuestions.length }}</text>
-      <text class="score-text">{{ quizScore }} 分</text>
+      <text class="score-text">答对 {{ quizScore }} 题</text>
     </view>
     <view class="quiz-card">
       <view class="quiz-question">
-        <text class="quiz-term">{{ currentQuestion.term }}</text>
-        <view class="sound-btn" bindtap="onPlayAudio" data-text="{{ currentQuestion.term }}">🔊</view>
+        <text class="quiz-term">{{ currentQuestion.prompt }}</text>
+        <view class="sound-btn" bindtap="onPlayAudio" data-text="{{ currentQuestion.answer }}">🔊</view>
       </view>
       <view class="quiz-options">
         <button 
-          class="quiz-option {{ option.selected ? (option.correct ? 'correct' : 'wrong') : '' }}" 
+          class="quiz-option {{ quizAnswered && option === currentQuestion.answer ? 'correct' : (quizAnswered && quizAnswers[currentQuestion.id] === option ? 'wrong' : '') }}"
           wx:for="{{ currentQuestion.options }}" 
           wx:key="index" 
           bindtap="onSelectOption" 
           data-index="{{ index }}"
           disabled="{{ quizAnswered }}">
-          {{ option.text }}
+          {{ option }}
         </button>
       </view>
       <view class="quiz-actions" wx:if="{{ quizAnswered }}">

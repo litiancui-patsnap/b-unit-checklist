@@ -4,6 +4,10 @@ Component({
       type: Array,
       value: []
     },
+    quizAnswers: {
+      type: Object,
+      value: {}
+    },
     currentQuizIndex: {
       type: Number,
       value: 0
@@ -29,6 +33,11 @@ Component({
         this.setData({
           currentQuestion: questions[index],
           isLastQuestion: index === questions.length - 1
+        });
+      } else {
+        this.setData({
+          currentQuestion: null,
+          isLastQuestion: false
         });
       }
     }

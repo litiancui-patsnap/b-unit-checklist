@@ -62,6 +62,19 @@ assert.strictEqual(playCount, 1);
 
 audioSrc = '';
 playCount = 0;
+
+page.playPronunciation({
+  detail: {
+    text: 'Component audio event.',
+    src: 'https://cdn.example.com/speech/component.m4a'
+  }
+});
+
+assert.strictEqual(audioSrc, 'https://cdn.example.com/speech/component.m4a');
+assert.strictEqual(playCount, 1);
+
+audioSrc = '';
+playCount = 0;
 toastTitle = '';
 
 page.playPronunciation({
