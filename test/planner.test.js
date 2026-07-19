@@ -3,7 +3,8 @@ const {
   calculateStreak,
   getPlan,
   getWeek,
-  shiftDate
+  shiftDate,
+  updatePlannerCompletion
 } = require('../utils/planner.js');
 
 const sundayPlan = getPlan('2026-07-19');
@@ -31,5 +32,22 @@ assert.strictEqual(calculateStreak({
   '2026-07-18': { complete: true },
   '2026-07-17': { planner: { complete: false } }
 }, '2026-07-19'), 2);
+
+const baseTasks = getPlan('2026-07-19').tasks;
+const plannerDay = {
+  complete: true,
+  completeSource: 'study',
+  planner: {
+    checked: Object.fromEntries(baseTasks.map(item => [item.id, true])),
+    customTasks: [
+      { id: 'custom_1', title: '额外任务', language: 'jp', minutes: 15 }
+    ]
+  }
+};
+assert.strictEqual(updatePlannerCompletion(plannerDay, '2026-07-19'), false);
+assert.strictEqual(plannerDay.complete, true, 'study completion should not be cleared');
+plannerDay.planner.customTasks = [];
+assert.strictEqual(updatePlannerCompletion(plannerDay, '2026-07-19'), true);
+assert.strictEqual(plannerDay.completeSource, 'planner');
 
 console.log('planner tests passed');

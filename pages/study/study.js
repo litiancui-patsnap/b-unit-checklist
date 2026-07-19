@@ -4,7 +4,7 @@ const { countCheckedByItems, normalizeCheckedMap } = require('../../utils/checkl
 const { generateId, getGoalLabel, getIntensityLabel, getTaskTypeLabel } = require('../../utils/defaultConfig.js');
 const { getPronunciationAudioSource, normalizePronunciationText } = require('../../utils/pronunciation.js');
 const { getDailyContent, getWordSuggestions, lookupWord, requestTtsAudio } = require('../../utils/aiLearning.js');
-const { getPlan } = require('../../utils/planner.js');
+const { updatePlannerCompletion } = require('../../utils/planner.js');
 const {
   SPEAKING_SCENES,
   WORD_CATEGORY_OPTIONS,
@@ -144,6 +144,7 @@ Page({
   },
 
   onLoad(options = {}) {
+    this.skipNextShowReload = true;
     this.initialTaskType = options.taskType || '';
     this.setData({
       plannerTaskId: decodeURIComponent(options.plannerTaskId || ''),
@@ -178,19 +179,12 @@ Page({
     if (!plannerTaskId || !plannerDate) {
       return;
     }
-    const dayData = getDayData(plannerDate);
-    if (!dayData?.planner) {
-      wx.showToast({ title: '计划任务不存在', icon: 'none' });
-      return;
-    }
+    const dayData = getDayData(plannerDate) || {
+      planner: { checked: {}, customTasks: [], complete: false }
+    };
     dayData.planner.checked = dayData.planner.checked || {};
     dayData.planner.checked[plannerTaskId] = true;
-    const tasks = [...getPlan(plannerDate).tasks, ...(dayData.planner.customTasks || [])];
-    dayData.planner.complete = tasks.length > 0 && tasks.every(item => dayData.planner.checked[item.id]);
-    if (dayData.planner.complete) {
-      dayData.complete = true;
-      dayData.completeSource = 'planner';
-    }
+    updatePlannerCompletion(dayData, plannerDate);
     setDayData(plannerDate, dayData);
     wx.showToast({ title: '计划任务已完成', icon: 'success' });
     setTimeout(() => wx.navigateBack(), 500);
@@ -218,7 +212,11 @@ Page({
   },
 
   onShow() {
-    this.loadData();
+    if (this.skipNextShowReload) {
+      this.skipNextShowReload = false;
+    } else {
+      this.loadData();
+    }
     this.checkReminder();
   },
 
@@ -1050,6 +1048,7 @@ Page({
   markTodayComplete(rescue) {
     const { todayData } = this.data;
     todayData.complete = true;
+    todayData.completeSource = 'study';
     todayData.rescue = rescue ? {
       ...rescue,
       completedAt: Date.now()
@@ -1071,7 +1070,8 @@ Page({
 
   uncompleteToday() {
     const { todayData } = this.data;
-    todayData.complete = false;
+    todayData.complete = Boolean(todayData.planner?.complete);
+    todayData.completeSource = todayData.planner?.complete ? 'planner' : '';
     todayData.rescue = null;
     this.setData({ todayData, shareText: '' });
     this.saveTodayData();

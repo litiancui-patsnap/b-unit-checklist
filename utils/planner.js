@@ -165,6 +165,27 @@ function calculateStreak(allDays = {}, todayString) {
   return streak;
 }
 
+function updatePlannerCompletion(dayData = {}, dateString) {
+  dayData.planner = {
+    checked: {},
+    customTasks: [],
+    complete: false,
+    ...(dayData.planner || {})
+  };
+  dayData.planner.checked = dayData.planner.checked || {};
+  dayData.planner.customTasks = dayData.planner.customTasks || [];
+  const tasks = [...getPlan(dateString).tasks, ...dayData.planner.customTasks];
+  const complete = tasks.length > 0 && tasks.every(item => dayData.planner.checked[item.id]);
+  dayData.planner.complete = complete;
+  if (complete) {
+    dayData.complete = true;
+    dayData.completeSource = 'planner';
+  } else if (dayData.completeSource === 'planner') {
+    dayData.complete = false;
+  }
+  return complete;
+}
+
 function getLanguageLabel(language) {
   return language === 'jp' ? '日语' : language === 'en' ? '英语' : '复习';
 }
@@ -185,5 +206,6 @@ module.exports = {
   getPlan,
   getResourceDescription,
   getWeek,
-  shiftDate
+  shiftDate,
+  updatePlannerCompletion
 };

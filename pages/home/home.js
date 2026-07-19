@@ -6,7 +6,8 @@ const {
   getPlan,
   getResourceDescription,
   getWeek,
-  shiftDate
+  shiftDate,
+  updatePlannerCompletion
 } = require('../../utils/planner.js');
 
 const LANGUAGE_OPTIONS = [
@@ -78,11 +79,16 @@ Page({
       wx.redirectTo({ url: '/pages/onboarding/onboarding' });
       return;
     }
+    this.skipNextShowReload = true;
     this.setData({ selectedDate: getToday() });
     this.loadPlan();
   },
 
   onShow() {
+    if (this.skipNextShowReload) {
+      this.skipNextShowReload = false;
+      return;
+    }
     if (this.data.selectedDate) {
       this.loadPlan();
     }
@@ -99,7 +105,7 @@ Page({
       checked: Boolean(dayData.planner.checked?.[item.id]),
       languageLabel: getLanguageLabel(item.language),
       languageClass: `language-${item.language}`,
-      canExecute: Boolean(item.executionType),
+      canExecute: Boolean(item.executionType && selectedDate === today),
       isCustom: String(item.id).startsWith('custom_')
     }));
     const plannedMinutes = tasks.reduce((sum, item) => sum + Number(item.minutes || 0), 0);
@@ -172,14 +178,7 @@ Page({
     const checked = !dayData.planner.checked[id];
     dayData.planner.checked[id] = checked;
 
-    const allTasks = [...getPlan(this.data.selectedDate).tasks, ...(dayData.planner.customTasks || [])];
-    dayData.planner.complete = allTasks.length > 0 && allTasks.every(item => dayData.planner.checked[item.id]);
-    if (dayData.planner.complete) {
-      dayData.complete = true;
-      dayData.completeSource = 'planner';
-    } else if (dayData.completeSource === 'planner') {
-      dayData.complete = false;
-    }
+    updatePlannerCompletion(dayData, this.data.selectedDate);
 
     setDayData(this.data.selectedDate, dayData);
     this.currentDayData = dayData;
@@ -193,6 +192,13 @@ Page({
     if (!executionType) {
       wx.showToast({ title: '按任务资料开始学习', icon: 'none' });
       return;
+    }
+    if (this.data.selectedDate !== getToday()) {
+      wx.showToast({ title: '仅今天的任务可进入学习', icon: 'none' });
+      return;
+    }
+    if (!getDayData(this.data.selectedDate)) {
+      setDayData(this.data.selectedDate, this.currentDayData);
     }
     wx.navigateTo({
       url: `/pages/study/study?taskType=${executionType}&plannerTaskId=${encodeURIComponent(taskId)}&plannerDate=${this.data.selectedDate}&plannerTaskTitle=${encodeURIComponent(taskTitle)}`
@@ -229,10 +235,7 @@ Page({
       resource: '自定义学习资料',
       executionType: language.value === 'en' ? 'read' : ''
     });
-    dayData.planner.complete = false;
-    if (dayData.completeSource === 'planner') {
-      dayData.complete = false;
-    }
+    updatePlannerCompletion(dayData, this.data.selectedDate);
     setDayData(this.data.selectedDate, dayData);
     this.currentDayData = dayData;
     this.setData({ customTitle: '' });
@@ -245,6 +248,7 @@ Page({
     if (!dayData) return;
     dayData.planner.customTasks = dayData.planner.customTasks.filter(item => item.id !== id);
     delete dayData.planner.checked[id];
+    updatePlannerCompletion(dayData, this.data.selectedDate);
     setDayData(this.data.selectedDate, dayData);
     this.loadPlan();
   },
@@ -257,10 +261,7 @@ Page({
         if (!result.confirm) return;
         const dayData = this.currentDayData;
         dayData.planner.checked = {};
-        dayData.planner.complete = false;
-        if (dayData.completeSource === 'planner') {
-          dayData.complete = false;
-        }
+        updatePlannerCompletion(dayData, this.data.selectedDate);
         setDayData(this.data.selectedDate, dayData);
         this.loadPlan();
       }
