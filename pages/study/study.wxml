@@ -1,0 +1,190 @@
+<view class="container">
+  <!-- 加载状态和错误处理 -->
+  <loading-skeleton 
+    loading="{{ isLoading }}" 
+    error="{{ loadError }}"
+    bind:retry="handleRetry"
+  />
+
+  <!-- 主内容区域 -->
+  <view wx:if="{{ !isLoading && !loadError }}">
+    <view class="planner-task-banner" wx:if="{{ plannerTaskId }}">
+      <view class="planner-task-copy">
+        <text class="planner-task-label">当前计划任务</text>
+        <text class="planner-task-title">{{ plannerTaskTitle }}</text>
+      </view>
+      <button class="planner-task-button" bindtap="completePlannerTask">完成并返回计划</button>
+    </view>
+
+    <!-- 日期与完成状态组件 -->
+    <daily-stats 
+    today="{{ today }}"
+    learningGoalText="{{ learningGoalText }}"
+    intensityText="{{ intensityText }}"
+    complete="{{ todayData.complete }}"
+    progress="{{ progress }}"
+    planTotalMinutes="{{ planTotalMinutes }}"
+    streak="{{ streak }}"
+  />
+
+  <!-- 提醒状态 -->
+  <view class="section reminder-section" wx:if="{{ reminderEnabled }}">
+    <text class="reminder-text">⏰ 英语学习提醒: {{ reminderTime }}</text>
+  </view>
+
+  <!-- 今日计划概览 -->
+  <view class="section plan-summary-section">
+    <view class="section-title">今日学习计划</view>
+    <view class="plan-summary">
+      <view class="plan-summary-main">
+        <text class="plan-summary-title">{{ learningGoalText }} · {{ intensityText }}</text>
+        <text class="plan-summary-desc">已完成 {{ planCompletedCount }}/{{ planTotalCount }} 项，达到 {{ planRequiredCount }} 项即可打卡 · 预计 {{ planTotalMinutes }} 分钟</text>
+      </view>
+    </view>
+    <view class="module-list" wx:if="{{ planModules.length > 0 }}">
+      <view class="module-chip" wx:for="{{ planModules }}" wx:key="name">
+        <text class="module-name">{{ item.name }}</text>
+        <text class="module-meta">{{ item.count }}项 · {{ item.minutes }}分</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 今日内容输入组件 -->
+  <daily-content
+    id="content-module"
+    dailyContent="{{ dailyContent }}"
+    contentSourceText="{{ contentSourceText }}"
+    contentChecks="{{ todayData.contentChecks }}"
+    bind:playaudio="playPronunciation"
+    bind:togglecheck="toggleContentCheck"
+  />
+
+  <!-- 今日单词本 -->
+  <view class="section wordbook-section" id="word-module">
+    <view class="section-title">今日单词本</view>
+    <view class="wordbook-summary">
+      <text class="summary-text">今日 {{ todayData.words.length }}/10 个，建议 3-10 个</text>
+      <text class="summary-text">到期复习 {{ reviewQueue.length }} 个</text>
+    </view>
+    <view class="word-input-grid">
+      <input class="word-input" value="{{ wordDraft.term }}" bindinput="onWordDraftInput" data-field="term" placeholder="英文 / 短语" />
+      <input class="word-input" value="{{ wordDraft.phonetic }}" bindinput="onWordDraftInput" data-field="phonetic" placeholder="音标，可选" />
+      <input class="word-input" value="{{ wordDraft.translation }}" bindinput="onWordDraftInput" data-field="translation" placeholder="中文含义" />
+      <picker mode="selector" range="{{ wordCategoryOptions }}" range-key="label" value="{{ wordCategoryIndex }}" bindchange="onWordCategoryChange">
+        <view class="word-input word-picker">{{ wordCategoryOptions[wordCategoryIndex].label }}</view>
+      </picker>
+      <input class="word-input word-input-full" value="{{ wordDraft.example }}" bindinput="onWordDraftInput" data-field="example" placeholder="例句，可选" />
+    </view>
+    <view class="word-action-row">
+      <button class="btn-default compact-btn" bindtap="lookupWordDraft">{{ aiBusy ? '补全中...' : 'AI/词典补全' }}</button>
+      <button class="btn-default compact-btn" bindtap="addRecommendedWords">{{ aiBusy ? '推荐中...' : '推荐今日单词' }}</button>
+    </view>
+    <button class="btn-default" bindtap="addWord">添加到今日单词本</button>
+
+    <view class="word-list" wx:if="{{ todayData.words.length > 0 }}">
+      <view class="word-card" wx:for="{{ todayData.words }}" wx:key="id" wx:for-item="word">
+        <view class="word-main">
+          <view class="word-title-row">
+            <text class="word-term">{{ word.term }}</text>
+            <view class="sound-btn" bindtap="playPronunciation" data-text="{{ word.term }}" data-src="{{ word.audioSrc }}">🔊</view>
+          </view>
+          <text class="word-status">{{ word.statusLabel }}</text>
+        </view>
+        <view class="word-meta-row">
+          <text class="word-phonetic" wx:if="{{ word.phonetic }}">{{ word.phonetic }}</text>
+          <text class="word-category">{{ word.categoryLabel }}</text>
+          <text class="word-source">{{ word.source === 'manual' ? '手动' : 'AI/词典' }}</text>
+        </view>
+        <text class="word-translation">{{ word.translation }}</text>
+        <text class="word-example" wx:if="{{ word.example }}">{{ word.example }}</text>
+        <view class="word-actions">
+          <button class="mini-btn" wx:for="{{ wordStatusOptions }}" wx:key="value" wx:for-item="status" bindtap="setWordStatus" data-id="{{ word.id }}" data-status="{{ status.value }}">{{ status.label }}</button>
+          <button class="mini-btn danger" bindtap="deleteWord" data-id="{{ word.id }}">删除</button>
+        </view>
+      </view>
+    </view>
+    <view class="empty-state compact" wx:else>
+      <text class="empty-text">添加今天遇到的单词或短语，后续会进入复习队列</text>
+    </view>
+  </view>
+
+  <!-- 单词复习组件 -->
+  <word-review
+    id="review-module"
+    reviewQueue="{{ reviewQueue }}"
+    bind:markreview="markReviewWord"
+  />
+
+  <!-- 场景口语组件 -->
+  <speaking-practice
+    id="speaking-module"
+    sceneTemplates="{{ sceneTemplates }}"
+    sceneStats="{{ sceneStats }}"
+    bind:togglescene="toggleSceneLine"
+    bind:playaudio="playPronunciation"
+  />
+
+  <!-- 单词小测组件 -->
+  <word-quiz 
+    quizQuestions="{{ quizQuestions }}"
+    quizAnswers="{{ todayData.quiz.answers }}"
+    currentQuizIndex="{{ currentQuizIndex }}"
+    quizScore="{{ quizScore }}"
+    quizAnswered="{{ quizAnswered }}"
+    bind:selectoption="selectQuizOption"
+    bind:nextquestion="nextQuizQuestion"
+    bind:generatequiz="generateQuiz"
+    bind:playaudio="playPronunciation"
+  />
+
+  <!-- 英文日记组件 -->
+  <learning-diary
+    id="diary-module"
+    diaryText="{{ todayData.diary }}"
+    diaryTemplates="{{ diaryTemplates }}"
+    diaryTemplateSourceText="{{ diaryTemplateSourceText }}"
+    bind:diaryinput="onDiaryInput"
+    bind:diaryblur="saveDiary"
+    bind:usetemplate="useDiaryTemplate"
+    bind:playaudio="playPronunciation"
+  />
+
+  <!-- 操作按钮 -->
+  <view class="section actions-section">
+    <button class="btn-primary" wx:if="{{ !todayData.complete }}" bindtap="completeToday">完成今日英语</button>
+    <view class="rescue-hint" wx:if="{{ !todayData.complete && todayData.template !== 'A' }}">未达当前强度时，达到轻量阈值可用补救完成保留连续学习</view>
+    <button class="btn-default" wx:if="{{ todayData.complete }}" bindtap="uncompleteToday">取消完成</button>
+    <view class="rescue-hint" wx:if="{{ todayData.rescue.enabled }}">今天已按轻量补救完成</view>
+    <button class="btn-danger" bindtap="resetToday">重置今天</button>
+  </view>
+
+  <!-- 分享文案 -->
+  <view class="section share-section" wx:if="{{ shareText }}">
+    <view class="section-title">打卡分享</view>
+    <view class="share-card-preview">
+      <image class="share-cover" src="/assets/article-cover-english-pivot.png" mode="aspectFill" />
+      <view class="share-card-main">
+        <view class="share-card-title">{{ shareTitle }}</view>
+        <view class="share-card-desc">好友点击微信分享卡片可直接进入小程序</view>
+      </view>
+    </view>
+    <view class="share-action-row">
+      <button class="btn-primary share-card-button" open-type="share">分享小程序卡片</button>
+      <button class="btn-default share-copy-button" bindtap="copyShareText">复制打卡文案</button>
+    </view>
+    <textarea class="share-textarea" value="{{ shareText }}" disabled maxlength="-1" show-confirm-bar="{{ false }}" />
+  </view>
+
+  <!-- 最近7天 -->
+  <view class="section recent-section">
+    <view class="section-title">最近7天学习</view>
+    <view class="recent-list">
+      <view class="recent-item" wx:for="{{ recent7Days }}" wx:key="date">
+        <text class="recent-date">{{ item.date }}</text>
+        <text class="recent-template">{{ item.template }}</text>
+        <text class="recent-complete">{{ item.complete }}</text>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

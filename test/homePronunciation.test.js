@@ -30,7 +30,7 @@ global.wx = {
   }
 };
 
-require('../pages/home/home.js');
+require('../pages/study/study.js');
 
 const page = {
   ...capturedPage,

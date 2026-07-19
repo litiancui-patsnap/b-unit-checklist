@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "学习执行",
+  "usingComponents": {
+    "loading-skeleton": "../home/components/loading-skeleton/loading-skeleton",
+    "daily-stats": "../home/components/daily-stats/daily-stats",
+    "daily-content": "../home/components/daily-content/daily-content",
+    "word-review": "../home/components/word-review/word-review",
+    "speaking-practice": "../home/components/speaking-practice/speaking-practice",
+    "word-quiz": "../home/components/word-quiz/word-quiz",
+    "learning-diary": "../home/components/learning-diary/learning-diary"
+  }
+}

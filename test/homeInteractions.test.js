@@ -11,7 +11,7 @@ global.wx = {
   showToast() {}
 };
 
-require('../pages/home/home.js');
+require('../pages/study/study.js');
 
 function createPage(data) {
   return {

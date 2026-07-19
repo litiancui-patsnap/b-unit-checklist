@@ -2,13 +2,14 @@
   "pages": [
     "pages/onboarding/onboarding",
     "pages/home/home",
+    "pages/study/study",
     "pages/settings/settings",
     "pages/export/export"
   ],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "每日英语打卡",
+    "navigationBarTitleText": "语言学习计划",
     "navigationBarTextStyle": "black"
   },
   "tabBar": {
@@ -19,7 +20,7 @@
     "list": [
       {
         "pagePath": "pages/home/home",
-        "text": "今日",
+        "text": "计划",
         "iconPath": "images/home.png",
         "selectedIconPath": "images/home_selected.png"
       },

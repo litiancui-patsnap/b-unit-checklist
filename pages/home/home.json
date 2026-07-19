@@ -1,12 +1,4 @@
 {
-  "navigationBarTitleText": "每日英语",
-  "usingComponents": {
-    "loading-skeleton": "./components/loading-skeleton/loading-skeleton",
-    "daily-stats": "./components/daily-stats/daily-stats",
-    "daily-content": "./components/daily-content/daily-content",
-    "word-review": "./components/word-review/word-review",
-    "speaking-practice": "./components/speaking-practice/speaking-practice",
-    "word-quiz": "./components/word-quiz/word-quiz",
-    "learning-diary": "./components/learning-diary/learning-diary"
-  }
+  "navigationBarTitleText": "语言学习计划",
+  "enablePullDownRefresh": false
 }
