@@ -43,11 +43,16 @@ page {
 
 .date-arrow,
 .date-current {
+  display: flex;
+  height: 70rpx;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
   background: transparent;
   color: #17233d;
-  line-height: 70rpx;
+  line-height: 1;
 }
 
 .date-arrow::after,
@@ -56,15 +61,22 @@ page {
 }
 
 .date-arrow {
+  flex: 0 0 72rpx;
   width: 72rpx;
+  min-width: 72rpx;
   font-size: 40rpx;
   font-weight: 700;
 }
 
 .date-current {
-  flex: 1;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
   font-size: 28rpx;
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card {

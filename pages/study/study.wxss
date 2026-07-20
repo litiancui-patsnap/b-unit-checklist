@@ -1,13 +1,23 @@
 .planner-task-banner {
+  position: fixed;
+  right: 32rpx;
+  bottom: 24rpx;
+  left: 32rpx;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20rpx;
-  margin-bottom: 24rpx;
+  margin-bottom: 0;
   padding: 24rpx;
   border: 1rpx solid #d7e4f8;
   border-radius: 24rpx;
   background: linear-gradient(135deg, #edf4ff, #f7faff);
+  box-shadow: 0 10rpx 28rpx rgba(34, 72, 128, 0.12);
+}
+
+.planner-mode {
+  padding-bottom: 180rpx;
 }
 
 .planner-task-copy {

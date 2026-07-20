@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container {{ plannerTaskId ? 'planner-mode' : '' }}">
   <!-- 加载状态和错误处理 -->
   <loading-skeleton 
     loading="{{ isLoading }}" 
