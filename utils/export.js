@@ -1,16 +1,18 @@
-const { getRecentDates } = require('./date.js');
+const { getRecentDates, getToday } = require('./date.js');
 const { getAllDays, getConfig } = require('./storage.js');
 const { countCheckedByItems } = require('./checklist.js');
 const { TASK_TYPES, getGoalLabel, getIntensityLabel, getTaskTypeLabel } = require('./defaultConfig.js');
 const { collectWordsFromDays, getSceneStats } = require('./learning.js');
+const { buildLearningReview, getDaySummary } = require('./learningInsights.js');
 
 function generateExportText(onlyCompleted = false) {
   const dates = getRecentDates(30);
   const recent7Dates = getRecentDates(7);
   const allDays = getAllDays();
   const config = getConfig();
+  const review = buildLearningReview(allDays, getToday());
 
-  const weeklyCompletedCount = recent7Dates.filter(date => allDays[date]?.complete).length;
+  const weeklyCompletedCount = review.completedDays;
   const weeklyDiaryCount = recent7Dates.filter(date => (allDays[date]?.diary || '').trim()).length;
   const weeklyWordAddedCount = recent7Dates.reduce((sum, date) => sum + (allDays[date]?.words || []).length, 0);
   const recent7DateSet = new Set(recent7Dates);
@@ -24,8 +26,14 @@ function generateExportText(onlyCompleted = false) {
   const weeklyRescueCount = recent7Dates.filter(date => allDays[date]?.rescue?.enabled).length;
   const weeklyTypeStats = getWeeklyTypeStats(recent7Dates, allDays, config);
 
-  let text = '英语学习记录 / 周报\n';
+  let text = '语言学习复盘 / 周报\n';
   text += '='.repeat(40) + '\n\n';
+  text += `本周计划完成：${review.completedTasks}/${review.totalTasks} 项\n`;
+  text += `本周完成时长：${review.completedMinutes} 分钟\n`;
+  text += `日语 / 英语投入：${review.japaneseMinutes} / ${review.englishMinutes} 分钟\n`;
+  text += `连续学习：${review.streak} 天\n\n`;
+  text += '英语执行记录\n';
+  text += '-'.repeat(40) + '\n';
   text += `学习目标：${getGoalLabel(config.learningGoal)}\n`;
   text += `默认强度：${getIntensityLabel(config.dailyIntensity)}\n`;
   text += `本周完成：${weeklyCompletedCount}/7 天\n`;
@@ -45,22 +53,19 @@ function generateExportText(onlyCompleted = false) {
 
   dates.reverse().forEach(date => {
     const dayData = allDays[date];
+    const daySummary = getDaySummary(date, dayData);
 
     if (!dayData) {
-      if (!onlyCompleted) {
-        text += `${date}  强度:-  完成:—  准备:0/0  任务:0/0\n`;
-        totalCount++;
-      }
       return;
     }
 
-    if (onlyCompleted && !dayData.complete) {
+    if (onlyCompleted && !daySummary.complete) {
       return;
     }
 
     const template = dayData.template || '-';
     const intensity = template === '-' ? '-' : getIntensityLabel(template);
-    const completeStatus = dayData.rescue?.enabled ? '补救' : (dayData.complete ? '✅' : '—');
+    const completeStatus = dayData.rescue?.enabled ? '补救' : (daySummary.complete ? '✅' : '—');
 
     const startTotal = config.startChecklist.length;
     const startChecked = countCheckedByItems(dayData.start, config.startChecklist);
@@ -77,15 +82,19 @@ function generateExportText(onlyCompleted = false) {
     const contentCount = Object.keys(dayData.contentChecks || {}).filter(key => dayData.contentChecks[key]).length;
     const quizText = dayData.quiz?.completed ? `${dayData.quiz.score || 0}` : '-';
 
-    text += `${date}  强度:${intensity}  完成:${completeStatus}  准备:${startChecked}/${startTotal}  任务:${itemsChecked}/${itemsTotal}  内容:${contentCount}  单词:${wordCount}  跟读:${sceneStats.completedLines}  小测:${quizText}\n`;
+    text += `${date}  完成:${completeStatus}  计划:${daySummary.completedTasks}/${daySummary.totalTasks}  时长:${daySummary.completedMinutes}/${daySummary.plannedMinutes}分钟  英语强度:${intensity}  英语任务:${itemsChecked}/${itemsTotal}  单词:${wordCount}  跟读:${sceneStats.completedLines}  小测:${quizText}\n`;
     if ((dayData.diary || '').trim()) {
       text += `  英文日记：${dayData.diary.trim()}\n`;
     }
     totalCount++;
-    if (dayData.complete) {
+    if (daySummary.complete) {
       completedCount++;
     }
   });
+
+  if (totalCount === 0) {
+    text += '暂无符合条件的学习记录\n';
+  }
 
   text += '\n' + '='.repeat(40) + '\n';
   text += `统计：共 ${totalCount} 天记录，已完成 ${completedCount} 天\n`;

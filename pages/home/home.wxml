@@ -61,13 +61,13 @@
 
     <view class="add-task-form">
       <input class="task-input" value="{{ customTitle }}" bindinput="onCustomTitleInput" maxlength="40" placeholder="添加自己的学习任务" />
-      <picker mode="selector" range="{{ languageOptions }}" range-key="label" value="{{ languageIndex }}" bindchange="onLanguageChange">
+      <picker class="task-picker" mode="selector" range="{{ languageOptions }}" range-key="label" value="{{ languageIndex }}" bindchange="onLanguageChange">
         <view class="picker-field">{{ languageOptions[languageIndex].label }}⌄</view>
       </picker>
-      <picker mode="selector" range="{{ minuteOptions }}" value="{{ minuteIndex }}" bindchange="onMinuteChange">
+      <picker class="task-picker" mode="selector" range="{{ minuteOptions }}" value="{{ minuteIndex }}" bindchange="onMinuteChange">
         <view class="picker-field">{{ minuteOptions[minuteIndex] }}分钟⌄</view>
       </picker>
-      <button class="add-button" bindtap="addCustomTask">添加</button>
+      <view class="add-button" hover-class="add-button-active" bindtap="addCustomTask">添加</view>
     </view>
   </view>
 

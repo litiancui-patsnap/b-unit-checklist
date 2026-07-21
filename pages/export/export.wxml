@@ -1,42 +1,130 @@
-<view class="container">
-  <!-- 使用说明 -->
-  <view class="section instruction-section">
-    <view class="instruction-title">学习记录说明</view>
-    <view class="instruction-content">
-      <text class="instruction-text">点击“一键复制”可复制最近 30 天英语学习记录</text>
-      <text class="instruction-text">记录包含本周完成天数、任务完成情况和英文日记</text>
-      <text class="instruction-text">开启“仅完成日”可过滤未完成记录</text>
-    </view>
-  </view>
-
-  <!-- 导出选项 -->
-  <view class="section">
-    <view class="section-title">筛选选项</view>
-    <view class="export-option">
-      <view class="option-info">
-        <text class="option-label">仅导出完成日</text>
-        <text class="option-desc">只显示完成英语学习的日期</text>
+<view class="review-page" wx:if="{{ !isLoading }}">
+  <view class="review-hero">
+    <view class="hero-topline">
+      <view>
+        <view class="hero-eyebrow">最近 7 天 · {{ rangeLabel }}</view>
+        <view class="hero-title">学习复盘</view>
+        <view class="hero-description">不只记录学了多久，更要看哪些任务真正完成、语言投入是否符合目标。</view>
       </view>
-      <switch checked="{{ onlyCompleted }}" bindchange="onOnlyCompletedChange" color="#1AAD19" />
+      <view class="today-action" bindtap="goTodayPlan">今日计划</view>
+    </view>
+    <view class="hero-stats">
+      <view class="hero-stat"><text class="stat-value">{{ streak }}</text><text class="stat-label">连续天数</text></view>
+      <view class="hero-stat"><text class="stat-value">{{ completedDays }}/7</text><text class="stat-label">完成天数</text></view>
+      <view class="hero-stat"><text class="stat-value">{{ completedMinutes }}</text><text class="stat-label">完成分钟</text></view>
+      <view class="hero-stat"><text class="stat-value">{{ completedTasks }}</text><text class="stat-label">完成任务</text></view>
     </view>
   </view>
 
-  <!-- 导出文本 -->
-  <view class="section">
-    <view class="section-title">学习记录 / 周报</view>
-    <view class="record-stats">
-      <text class="stats-text">共 {{ totalDays }} 天学习记录，已完成 {{ completedDays }} 天</text>
+  <view class="review-card rhythm-card">
+    <view class="card-heading">
+      <view>
+        <view class="card-title">本周节奏</view>
+        <view class="card-description">完成率 {{ completionRate }}% · 有学习动作 {{ activeDays }} 天</view>
+      </view>
+      <view class="refresh-action" bindtap="refreshRecords">刷新</view>
     </view>
-    <textarea class="export-textarea" value="{{ exportText }}" disabled maxlength="-1" show-confirm-bar="{{ false }}" />
+    <view class="rhythm-chart">
+      <view
+        class="rhythm-day {{ item.selected ? 'rhythm-day-selected' : '' }}"
+        wx:for="{{ weekDays }}"
+        wx:key="date"
+        data-date="{{ item.date }}"
+        bindtap="selectDay"
+      >
+        <view class="bar-track">
+          <view class="bar-fill {{ item.complete ? 'bar-complete' : '' }}" style="height: {{ item.barHeight }}%;"></view>
+        </view>
+        <text class="rhythm-weekday">{{ item.weekday }}</text>
+        <text class="rhythm-date">{{ item.shortDate }}</text>
+      </view>
+    </view>
   </view>
 
-  <!-- 操作按钮 -->
-  <view class="action-buttons">
-    <button class="btn-primary btn-large" bindtap="copyText">
-      <text class="btn-text">一键复制</text>
-    </button>
-    <button class="btn-secondary" bindtap="refreshExport">
-      <text class="btn-text">刷新数据</text>
-    </button>
+  <view class="review-grid">
+    <view class="review-card balance-card">
+      <view class="card-title">语言投入</view>
+      <view class="balance-row">
+        <view class="balance-label"><text>日语</text><text>{{ japaneseMinutes }} 分钟</text></view>
+        <view class="balance-track"><view class="balance-fill balance-jp" style="width: {{ japaneseRatio }}%;"></view></view>
+      </view>
+      <view class="balance-row">
+        <view class="balance-label"><text>英语</text><text>{{ englishMinutes }} 分钟</text></view>
+        <view class="balance-track"><view class="balance-fill balance-en" style="width: {{ englishRatio }}%;"></view></view>
+      </view>
+      <view class="review-minutes" wx:if="{{ reviewMinutes }}">另有复习任务 {{ reviewMinutes }} 分钟</view>
+    </view>
+
+    <view class="review-card output-card">
+      <view class="card-title">输出证据</view>
+      <view class="output-metrics">
+        <view class="output-metric"><text class="output-value">{{ outputDays }}</text><text class="output-label">日记天数</text></view>
+        <view class="output-metric"><text class="output-value">{{ wordCount }}</text><text class="output-label">新增单词</text></view>
+        <view class="output-metric"><text class="output-value">{{ completedTasks }}/{{ totalTasks }}</text><text class="output-label">计划任务</text></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="review-card" id="day-detail" wx:if="{{ selectedDay }}">
+    <view class="day-heading">
+      <view>
+        <view class="day-date">{{ selectedDay.dateLabel }}</view>
+        <view class="day-focus">{{ selectedDay.focus }}</view>
+      </view>
+      <view class="day-progress">{{ selectedDay.progressText }}</view>
+    </view>
+    <view class="day-summary">
+      <text>{{ selectedDay.taskSummary }}</text>
+      <text>{{ selectedDay.minuteSummary }}</text>
+    </view>
+    <view class="day-task-list">
+      <view class="day-task {{ item.checked ? 'day-task-complete' : '' }}" wx:for="{{ selectedDay.tasks }}" wx:key="id">
+        <view class="task-status">{{ item.checked ? '✓' : '' }}</view>
+        <view class="task-copy">
+          <view class="task-title">{{ item.title }}</view>
+          <view class="task-meta"><text class="language-tag {{ item.languageClass }}">{{ item.languageLabel }}</text><text>{{ item.resource }}</text></view>
+        </view>
+        <text class="task-minutes">{{ item.minutes }} 分钟</text>
+      </view>
+    </view>
+    <view class="diary-preview" wx:if="{{ selectedDay.diary }}">“{{ selectedDay.diary }}”</view>
+  </view>
+
+  <view class="review-card">
+    <view class="card-title">本周复盘建议</view>
+    <view class="insight-list">
+      <view class="insight-item insight-{{ item.tone }}" wx:for="{{ insights }}" wx:key="title">
+        <view class="insight-dot"></view>
+        <view class="insight-copy"><text class="insight-title">{{ item.title }}</text><text class="insight-description">{{ item.description }}</text></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="review-card" wx:if="{{ recentRecords.length }}">
+    <view class="card-title">最近学习记录</view>
+    <view class="record-list">
+      <view class="record-item" wx:for="{{ recentRecords }}" wx:key="date" data-date="{{ item.date }}" bindtap="selectRecentRecord">
+        <view class="record-date-block"><text class="record-date">{{ item.dateLabel }}</text><text class="record-focus">{{ item.focus }}</text></view>
+        <view class="record-result"><text class="record-status record-{{ item.statusClass }}">{{ item.statusText }}</text><text class="record-detail">{{ item.completedTasks }}/{{ item.totalTasks }} 项 · {{ item.completedMinutes }} 分钟</text></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="review-card report-card">
+    <view class="card-heading">
+      <view>
+        <view class="card-title">复制周报</view>
+        <view class="card-description">用于发给老师、存入笔记或做月度复盘。</view>
+      </view>
+      <view class="toggle-report" bindtap="toggleReport">{{ showReport ? '收起' : '预览' }}</view>
+    </view>
+    <view class="report-option">
+      <view><text class="report-label">仅保留完成日</text><text class="report-description">当前共 {{ totalDays }} 天记录，完成 {{ completedExportDays }} 天</text></view>
+      <switch checked="{{ onlyCompleted }}" bindchange="onOnlyCompletedChange" color="#3478e5" />
+    </view>
+    <textarea class="report-textarea" wx:if="{{ showReport }}" value="{{ exportText }}" disabled maxlength="-1" show-confirm-bar="{{ false }}" />
+    <button class="copy-button" bindtap="copyText">复制学习周报</button>
   </view>
 </view>
+
+<view class="loading-page" wx:else>正在整理学习记录...</view>

@@ -320,9 +320,13 @@ page {
 
 .add-task-form {
   display: grid;
-  grid-template-columns: 1fr 150rpx 160rpx 96rpx;
+  grid-template-columns: minmax(0, 1fr) 150rpx 160rpx 96rpx;
   gap: 10rpx;
   margin-top: 24rpx;
+}
+
+.task-picker {
+  min-width: 0;
 }
 
 .task-input,
@@ -343,7 +347,13 @@ page {
 }
 
 .add-button {
+  display: flex;
+  width: 96rpx;
+  min-width: 0;
   height: 76rpx;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
   border-radius: 18rpx;
@@ -351,11 +361,12 @@ page {
   color: #fff;
   font-size: 23rpx;
   font-weight: 700;
-  line-height: 76rpx;
+  line-height: 1;
 }
 
-.add-button::after {
-  border: 0;
+.add-button-active {
+  background: #263552;
+  transform: scale(0.98);
 }
 
 .dashboard-grid {
@@ -517,6 +528,22 @@ page {
   text-align: center;
 }
 
+@media (max-width: 480px) {
+  .add-task-form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 112rpx;
+  }
+
+  .task-input {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .add-button {
+    width: 112rpx;
+  }
+}
+
 @media (max-width: 360px) {
   .stat-grid,
   .dashboard-grid {
@@ -529,11 +556,4 @@ page {
     grid-column: auto;
   }
 
-  .add-task-form {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .task-input {
-    grid-column: 1 / -1;
-  }
 }

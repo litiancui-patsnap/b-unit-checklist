@@ -26,13 +26,13 @@
       },
       {
         "pagePath": "pages/settings/settings",
-        "text": "设置",
+        "text": "策略",
         "iconPath": "images/settings.png",
         "selectedIconPath": "images/settings_selected.png"
       },
       {
         "pagePath": "pages/export/export",
-        "text": "记录",
+        "text": "复盘",
         "iconPath": "images/export.png",
         "selectedIconPath": "images/export_selected.png"
       }

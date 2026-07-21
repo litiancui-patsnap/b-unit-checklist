@@ -1,43 +1,132 @@
-<view class="container">
-  <!-- 学习目标 -->
-  <view class="section">
-    <view class="section-title">英语学习目标</view>
-    <view class="reminder-row">
-      <view class="option-info">
-        <text class="reminder-label">当前目标</text>
-        <text class="option-desc">用于生成首页学习定位和分享文案</text>
+<view class="strategy-page">
+  <view class="strategy-hero">
+    <view class="hero-eyebrow">英语学习策略</view>
+    <view class="hero-title">{{ selectedGoalLabel }}</view>
+    <view class="hero-description">{{ selectedGoalDescription }}</view>
+    <view class="hero-metrics">
+      <view class="hero-metric">
+        <text class="metric-label">默认强度</text>
+        <text class="metric-value">{{ selectedIntensityLabel }}</text>
       </view>
-      <picker mode="selector" range="{{ learningGoalOptions }}" range-key="label" value="{{ learningGoalIndex }}" bindchange="onLearningGoalChange">
-        <view class="time-picker">{{ learningGoalOptions[learningGoalIndex].label }}</view>
-      </picker>
-    </view>
-    <view class="reminder-row">
-      <view class="option-info">
-        <text class="reminder-label">每日默认强度</text>
-        <text class="option-desc">新的一天会默认展示这个强度的任务</text>
+      <view class="hero-metric">
+        <text class="metric-label">预计用时</text>
+        <text class="metric-value">{{ strategyMinutes }} 分钟</text>
       </view>
-      <picker mode="selector" range="{{ dailyIntensityOptions }}" range-key="displayLabel" value="{{ dailyIntensityIndex }}" bindchange="onDailyIntensityChange">
-        <view class="time-picker">{{ dailyIntensityOptions[dailyIntensityIndex].label }}</view>
-      </picker>
+      <view class="hero-metric">
+        <text class="metric-label">英语动作</text>
+        <text class="metric-value">{{ strategyTaskCount }} 项</text>
+      </view>
     </view>
-    <button class="btn-default" bindtap="applyGoalDefaults">按当前目标生成默认任务</button>
-    <view class="settings-note">学习前准备和各强度任务会在首页自动使用，普通设置页不再逐项编辑。</view>
   </view>
 
-  <!-- AI 服务设置 -->
-  <view class="section">
-    <view class="section-title">智能学习服务</view>
-    <view class="reminder-row">
-      <view class="option-info">
-        <text class="reminder-label">智能学习服务</text>
-        <text class="option-desc">生成学习内容、查询单词释义并播放发音</text>
+  <view class="strategy-card">
+    <view class="card-heading">
+      <view>
+        <view class="card-title">1. 先决定英语要保持什么能力</view>
+        <view class="card-description">目标会影响执行页的单词、听力、口语、阅读和写作任务。</view>
       </view>
-      <switch checked="{{ aiService.enabled }}" bindchange="onAIServiceSwitch" color="#1AAD19" />
     </view>
+    <view class="goal-grid">
+      <view
+        class="goal-option {{ item.value === learningGoal ? 'goal-option-active' : '' }}"
+        wx:for="{{ learningGoalOptions }}"
+        wx:key="value"
+        data-index="{{ index }}"
+        bindtap="selectLearningGoal"
+      >
+        <view class="goal-option-top">
+          <text class="goal-name">{{ item.label }}</text>
+          <text class="goal-check" wx:if="{{ item.value === learningGoal }}">✓</text>
+        </view>
+        <text class="goal-description">{{ item.description }}</text>
+      </view>
+    </view>
+  </view>
 
-    <view class="service-status-row">
-      <text class="service-status-label">状态</text>
-      <text class="service-status-text {{ aiServiceStatusClass }}">{{ aiServiceStatusText }}</text>
+  <view class="strategy-card">
+    <view class="card-heading">
+      <view>
+        <view class="card-title">2. 选择默认执行强度</view>
+        <view class="card-description">首页语言计划不变；这里决定进入英语执行页后默认做多少。</view>
+      </view>
+    </view>
+    <view class="intensity-list">
+      <view
+        class="intensity-option {{ item.value === dailyIntensity ? 'intensity-option-active' : '' }}"
+        wx:for="{{ dailyIntensityOptions }}"
+        wx:key="value"
+        data-index="{{ index }}"
+        bindtap="selectDailyIntensity"
+      >
+        <view class="intensity-badge">{{ item.value }}</view>
+        <view class="intensity-copy">
+          <view class="intensity-name">{{ item.label }}</view>
+          <view class="intensity-description">{{ item.description }}</view>
+        </view>
+        <view class="intensity-time">约 {{ item.minutes }} 分钟</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="strategy-card">
+    <view class="card-heading card-heading-action">
+      <view>
+        <view class="card-title">3. 预览英语执行方案</view>
+        <view class="card-description">忙碌时做轻量，日常做标准，周末有余力再强化。</view>
+      </view>
+      <view class="text-action" bindtap="applyGoalDefaults">按目标重建</view>
+    </view>
+    <view class="preview-list">
+      <view class="preview-item {{ item.active ? 'preview-item-active' : '' }}" wx:for="{{ planPreviews }}" wx:key="key">
+        <view class="preview-level">{{ item.key }}</view>
+        <view class="preview-copy">
+          <view class="preview-title-row">
+            <text class="preview-name">{{ item.name }}</text>
+            <text class="preview-current" wx:if="{{ item.active }}">当前默认</text>
+          </view>
+          <text class="preview-description">{{ item.description }}</text>
+        </view>
+        <view class="preview-stats">
+          <text>{{ item.taskCount }} 项</text>
+          <text>{{ item.minutes }} 分钟</text>
+        </view>
+      </view>
+    </view>
+    <view class="strategy-tip">完成标准不是“全部做完才算学习”：达到模板阈值即可保住当天英语习惯。</view>
+  </view>
+
+  <view class="strategy-card">
+    <view class="card-title">执行提醒</view>
+    <view class="setting-row">
+      <view class="setting-copy">
+        <text class="setting-label">每日提醒</text>
+        <text class="setting-description">用于提醒回到计划页检查当天未完成任务。</text>
+      </view>
+      <switch checked="{{ reminderEnabled }}" bindchange="onReminderSwitch" color="#3478e5" />
+    </view>
+    <view class="setting-row" wx:if="{{ reminderEnabled }}">
+      <view class="setting-copy">
+        <text class="setting-label">提醒时间</text>
+        <text class="setting-description">建议放在仍有时间完成轻量任务的时段。</text>
+      </view>
+      <picker mode="time" value="{{ reminderTime }}" bindchange="onTimeChange">
+        <view class="time-value">{{ reminderTime }}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="strategy-card">
+    <view class="card-title">智能学习服务</view>
+    <view class="setting-row">
+      <view class="setting-copy">
+        <text class="setting-label">生成内容、词典与发音</text>
+        <text class="setting-description">服务不可用时会自动回退到本地内容，不阻塞学习。</text>
+      </view>
+      <switch checked="{{ aiService.enabled }}" bindchange="onAIServiceSwitch" color="#3478e5" />
+    </view>
+    <view class="service-status">
+      <view class="status-dot {{ aiServiceStatusClass }}"></view>
+      <text class="status-text {{ aiServiceStatusClass }}">{{ aiServiceStatusText }}</text>
     </view>
 
     <view class="developer-settings" wx:if="{{ showDeveloperSettings }}">
@@ -45,7 +134,7 @@
       <view class="service-field">
         <text class="service-label">调用方式</text>
         <picker mode="selector" range="{{ ['微信云函数', 'HTTP代理'] }}" value="{{ aiService.mode === 'http' ? 1 : 0 }}" bindchange="onAIServiceModeChange">
-          <view class="service-input word-picker">{{ aiService.mode === 'http' ? 'HTTP代理' : '微信云函数' }}</view>
+          <view class="service-input">{{ aiService.mode === 'http' ? 'HTTP代理' : '微信云函数' }}</view>
         </picker>
       </view>
       <view class="service-field">
@@ -67,100 +156,38 @@
         <input class="service-input" value="{{ aiService.planPath }}" bindinput="onAIServiceInput" data-field="planPath" placeholder="/learning/plan" />
       </view>
     </view>
+  </view>
 
-    <view class="reminder-notice service-notice">
-      <view class="notice-title">服务说明</view>
-      <view class="notice-content">
-        <text class="notice-text">开启后，小程序会使用云端服务生成学习内容、查询单词释义并播放发音。服务不可用时，将自动使用本地内容。</text>
+  <view class="strategy-card method-card">
+    <view class="card-heading card-heading-action" bindtap="toggleMethodGuide">
+      <view>
+        <view class="card-title">更容易坚持的使用方法</view>
+        <view class="card-description">不是堆学习时长，而是让输入最终变成能说、能写、能回忆。</view>
       </view>
+      <view class="toggle-text">{{ showMethodGuide ? '收起' : '查看' }}</view>
+    </view>
+    <view class="method-list" wx:if="{{ showMethodGuide }}">
+      <view class="method-item">
+        <text class="method-index">01</text>
+        <view><text class="method-title">先完成可执行任务</text><text class="method-description">从计划页进入英语听、说、读、写模块，完成后自动回写进度。</text></view>
+      </view>
+      <view class="method-item">
+        <text class="method-index">02</text>
+        <view><text class="method-title">忙碌日主动降级</text><text class="method-description">不要因为做不了强化计划而放弃，切换轻量方案保住连续性。</text></view>
+      </view>
+      <view class="method-item">
+        <text class="method-index">03</text>
+        <view><text class="method-title">每周只优化一个动作</text><text class="method-description">在学习记录页检查最常跳过的任务，下周只调整一处。</text></view>
+      </view>
+      <view class="fallback-title">英文输出兜底句</view>
+      <view class="fallback-item" wx:for="{{ diaryTemplates }}" wx:key="*this">{{ item }}</view>
     </view>
   </view>
 
-  <!-- 英文日记模板 -->
-  <view class="section">
-    <view class="section-title">兜底日记模板</view>
-    <view class="diary-template-preview" wx:for="{{ diaryTemplates }}" wx:key="*this">{{ item }}</view>
-  </view>
-
-  <!-- 提醒设置 -->
-  <view class="section">
-    <view class="section-title">学习提醒</view>
-    <view class="reminder-row">
-      <text class="reminder-label">开启提醒</text>
-      <switch checked="{{ reminderEnabled }}" bindchange="onReminderSwitch" color="#1AAD19" />
-    </view>
-    <view class="reminder-row">
-      <text class="reminder-label">提醒时间</text>
-      <picker mode="time" value="{{ reminderTime }}" bindchange="onTimeChange">
-        <view class="time-picker">{{ reminderTime }}</view>
-      </picker>
-    </view>
-
-    <view class="reminder-notice">
-      <view class="notice-title">提醒说明</view>
-      <view class="notice-content">
-        <text class="notice-text">小程序打开时，会在设定时间后提示学习英语</text>
-        <text class="notice-text">小程序未打开时，无法收到系统级提醒</text>
-        <text class="notice-highlight">建议同时设置手机闹钟，帮助稳定坚持</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 英语学习方法 -->
-  <view class="section">
-    <view class="section-title collapsible" bindtap="toggleMethodGuide">
-      英语学习方法建议<text class="toggle-icon">{{ showMethodGuide ? '▼' : '▶' }}</text>
-    </view>
-
-    <view class="method-guide" wx:if="{{ showMethodGuide }}">
-      <view class="guide-section">
-        <view class="guide-section-title">核心原则</view>
-        <view class="principle-box">
-          <text class="principle-text">每天少量完成，比偶尔猛学更重要</text>
-          <text class="principle-text">单词、听力、跟读、输出要同时保留</text>
-          <text class="principle-text">忙的时候完成轻量任务，避免中断习惯</text>
-          <text class="principle-highlight">先坚持 7 天，再追求强度</text>
-        </view>
-      </view>
-
-      <view class="guide-section">
-        <view class="guide-section-title">每日 15 分钟安排</view>
-        <view class="time-allocation">
-          <text class="time-item">单词复习：5 分钟</text>
-          <text class="time-item">听力输入：5 分钟</text>
-          <text class="time-item">跟读输出：3 分钟</text>
-          <text class="time-item">英文日记：2 分钟</text>
-          <text class="time-total">重点是每天接触英语，而不是一次学完所有内容</text>
-        </view>
-      </view>
-
-      <view class="guide-section">
-        <view class="guide-section-title">英文日记模板</view>
-        <view class="sentence-templates">
-          <text class="template-title">不会写时可以套用：</text>
-          <text class="template-item">Today I learned ...</text>
-          <text class="template-item">I listened to ... for 10 minutes.</text>
-          <text class="template-item">One new word I remember is ...</text>
-          <text class="template-item">Tomorrow I will review ...</text>
-        </view>
-      </view>
-
-      <view class="guide-section">
-        <view class="guide-section-title">每周复盘</view>
-        <view class="review-checklist">
-          <text class="review-item">□ 本周学习了几天？</text>
-          <text class="review-item">□ 哪个任务最容易坚持？</text>
-          <text class="review-item">□ 哪个任务经常跳过？</text>
-          <text class="review-item">□ 下周只优化一个学习动作</text>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 操作按钮 -->
-  <view class="section">
-    <button class="btn-primary" bindtap="saveConfig">保存设置</button>
-    <button class="btn-danger" bindtap="resetConfig">恢复默认英语任务</button>
+  <view class="action-card">
+    <button class="save-button" bindtap="saveConfig">保存并应用英语策略</button>
+    <button class="plan-button" bindtap="goTodayPlan">返回今日计划</button>
+    <view class="reset-action" bindtap="resetConfig">恢复默认英语方案</view>
   </view>
 
   <view class="version-entry" bindtap="onVersionTap">版本 {{ configVersion }}</view>
