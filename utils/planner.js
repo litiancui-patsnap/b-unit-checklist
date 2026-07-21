@@ -87,6 +87,32 @@ const WEEKEND_PLANS = {
   }
 };
 
+const STUDY_PERSONAS = [
+  {
+    id: 'dual_worker',
+    name: '上班族日英双修',
+    shortName: '日英双修',
+    description: '日语系统推进，英语持续保持，适合工作日分段学习。',
+    promise: '教材主线 + 通勤复习 + 每周英语输出'
+  },
+  {
+    id: 'jlpt_business',
+    name: 'JLPT＋职场英语',
+    shortName: 'JLPT＋职场',
+    description: '日语围绕 JLPT 词汇、语法和真题，英语聚焦会议、邮件与表达。',
+    promise: '考试提分 + 工作场景可直接使用'
+  },
+  {
+    id: 'commute_listening',
+    name: '通勤听力计划',
+    shortName: '通勤听力',
+    description: '把主要任务压缩到去程、返程和睡前，优先训练听懂与复述。',
+    promise: '每天 4～5 个动作，通勤完成主要输入'
+  }
+];
+
+const EVIDENCE_REQUIRED_FROM = '2026-07-21';
+
 const TIPS = [
   '上班时只听已经学过、能理解 70%～90% 的材料；新语法和精听留给专注时间。',
   '完成比完美重要。疲劳时保留最低任务，也不要完全中断。',
@@ -97,6 +123,125 @@ const TIPS = [
 
 function task(title, language, minutes, resource, executionType = '') {
   return { title, language, minutes, resource, executionType };
+}
+
+function getStudyPersona(personaId = 'dual_worker') {
+  return STUDY_PERSONAS.find(item => item.id === personaId) || STUDY_PERSONAS[0];
+}
+
+function getTaskEvidence(taskItem = {}) {
+  const title = String(taskItem.title || '');
+  const executionType = taskItem.executionType || '';
+  if (executionType === 'speak' || /跟读|朗读|口头|复述/.test(title)) {
+    return {
+      type: 'audio',
+      label: '录音证据',
+      prompt: '录下 20～60 秒跟读或复述，回听后再提交。'
+    };
+  }
+  if (/日记|短文/.test(title)) {
+    return {
+      type: 'diary',
+      label: '日记证据',
+      prompt: '写下 2～5 句学习日记或短文，保留今天的真实输出。'
+    };
+  }
+  if (executionType === 'write' || /造句|摘要|观点|邮件|表达/.test(title)) {
+    return {
+      type: 'sentence',
+      label: '造句证据',
+      prompt: '至少写 2 句自己的表达，不直接照抄学习材料。'
+    };
+  }
+  if (/单词|语法|错题|周测|复习|预习/.test(title)) {
+    return {
+      type: 'recall',
+      label: '回忆证据',
+      prompt: '合上资料，写出至少 3 个还能回忆起来的要点。'
+    };
+  }
+  return {
+    type: 'retell',
+    label: '复述证据',
+    prompt: '不用看原文，写下你能复述出的核心内容和一个细节。'
+  };
+}
+
+function addTaskEvidence(taskItem = {}) {
+  const evidence = getTaskEvidence(taskItem);
+  return {
+    ...taskItem,
+    evidenceRequired: true,
+    evidenceType: evidence.type,
+    evidenceLabel: evidence.label,
+    evidencePrompt: evidence.prompt
+  };
+}
+
+function isTaskComplete(taskItem = {}, dayData = {}, dateString = '') {
+  const checked = Boolean(dayData?.planner?.checked?.[taskItem.id]);
+  if (!checked) return false;
+  if (!taskItem.evidenceRequired || !dateString || dateString < EVIDENCE_REQUIRED_FROM) return true;
+  return Boolean(dayData?.planner?.evidence?.[taskItem.id]);
+}
+
+function getCommutePlan(day) {
+  const weekend = day === 0 || day === 6;
+  const primaryLanguage = day === 2 || day === 4 ? 'en' : 'jp';
+  const secondaryLanguage = primaryLanguage === 'jp' ? 'en' : 'jp';
+  return {
+    focus: weekend ? '长段听力与复述' : '通勤完成主要输入',
+    description: weekend
+      ? '保留通勤式短任务结构，用更完整的片段做精听、跟读和复述。'
+      : '去程输入、返程复述，睡前只留下最小输出，不把学习压力带回家。',
+    tasks: [
+      task('通勤前闭卷回忆 10 个词', 'review', weekend ? 20 : 15, '个人词表或错词本', 'word'),
+      task(`${primaryLanguage === 'jp' ? '日语' : '英语'}去程精听 1 个片段`, primaryLanguage, weekend ? 40 : 25, '30～90 秒通勤音频', 'listen'),
+      task(`${primaryLanguage === 'jp' ? '日语' : '英语'}返程影子跟读与复述`, primaryLanguage, weekend ? 35 : 20, '去程同一音频', 'speak'),
+      task(`${secondaryLanguage === 'jp' ? '日语' : '英语'}保持听力`, secondaryLanguage, weekend ? 30 : 20, '已学过且能理解 70%～90% 的音频', 'listen'),
+      task('睡前造 2 句或写 1 句日记', secondaryLanguage, weekend ? 25 : 15, '学习日志', 'write')
+    ]
+  };
+}
+
+function transformJlptBusinessTask(taskItem = {}) {
+  if (taskItem.language === 'en') {
+    const englishTaskByType = {
+      read: task('职场英语邮件精读', 'en', taskItem.minutes, '真实邮件与常用句型', 'read'),
+      listen: task('职场会议片段精听', 'en', taskItem.minutes, '会议或汇报场景音频', 'listen'),
+      speak: task('职场英语口头复述录音', 'en', taskItem.minutes, '会议表达关键词', 'speak'),
+      write: task('职场英语邮件仿写', 'en', taskItem.minutes, '邮件模板与表达笔记', 'write')
+    };
+    return englishTaskByType[taskItem.executionType] || task('职场英语表达复习', 'en', taskItem.minutes, '会议、邮件与汇报表达', 'write');
+  }
+
+  const title = String(taskItem.title || '')
+    .replace('日语新课', 'JLPT 词汇语法')
+    .replace('下一课', 'JLPT 下一单元')
+    .replace('日语课文', 'JLPT 阅读')
+    .replace('新课文', 'JLPT 阅读材料')
+    .replace('本周日语', '本周 JLPT');
+  return {
+    ...taskItem,
+    title,
+    resource: /听|跟读|朗读/.test(title) ? 'JLPT 听力真题与原文' : 'JLPT 教材、真题与错题本'
+  };
+}
+
+function getPersonaPlanSource(day, personaId) {
+  if (personaId === 'commute_listening') {
+    return getCommutePlan(day);
+  }
+  const source = day === 0 || day === 6 ? WEEKEND_PLANS[day] : WEEKDAY_PLANS[day];
+  if (personaId === 'jlpt_business') {
+    return {
+      ...source,
+      focus: day === 0 ? 'JLPT 周测与职场输出' : `JLPT 主线 · ${source.focus}`,
+      description: '日语围绕 JLPT 可测能力推进，英语只保留能直接用于会议、邮件或汇报的动作。',
+      tasks: source.tasks.map(transformJlptBusinessTask)
+    };
+  }
+  return source;
 }
 
 function parseDate(dateString) {
@@ -116,18 +261,74 @@ function shiftDate(dateString, offset) {
   return formatDateKey(date);
 }
 
-function getPlan(dateString) {
+function getWeekStart(dateString) {
+  const date = parseDate(dateString);
+  const weekday = date.getDay() || 7;
+  date.setDate(date.getDate() - weekday + 1);
+  return formatDateKey(date);
+}
+
+function getPlanAdjustment(dateString, adjustments = {}) {
+  const weekStart = getWeekStart(dateString);
+  const adjustment = adjustments?.[weekStart];
+  if (!adjustment || adjustment.weekStart !== weekStart) {
+    return null;
+  }
+  return adjustment;
+}
+
+function roundToFive(value) {
+  return Math.max(10, Math.round(Number(value || 0) / 5) * 5);
+}
+
+function adjustTask(taskItem, adjustment) {
+  if (!adjustment) return taskItem;
+  const override = adjustment.taskOverrides?.[taskItem.id] || null;
+  const overriddenTask = override?.action === 'replace'
+    ? addTaskEvidence({ ...taskItem, ...(override.replacement || {}) })
+    : taskItem;
+  const taskScale = override?.action === 'lower' ? Number(override.minuteScale || 0.6) : 1;
+  let minutes = Number(overriddenTask.minutes || 0) * taskScale * Number(adjustment.minuteScale || 1);
+  if (overriddenTask.language === 'en') {
+    minutes += Number(adjustment.englishBonusMinutes || 0);
+  }
+  if (overriddenTask.executionType === 'speak' || overriddenTask.executionType === 'write') {
+    minutes += Number(adjustment.outputBonusMinutes || 0);
+  }
+  const adjustedMinutes = roundToFive(minutes);
+  return {
+    ...overriddenTask,
+    minutes: adjustedMinutes,
+    originalMinutes: Number(taskItem.minutes || 0),
+    adjustmentDelta: adjustedMinutes - Number(taskItem.minutes || 0),
+    adaptiveAction: override?.action || '',
+    adaptiveNote: override?.note || ''
+  };
+}
+
+function getPlan(dateString, adjustments = {}, personaId = 'dual_worker') {
   const date = parseDate(dateString);
   const day = date.getDay();
-  const source = day === 0 || day === 6 ? WEEKEND_PLANS[day] : WEEKDAY_PLANS[day];
+  const persona = getStudyPersona(personaId);
+  const source = getPersonaPlanSource(day, persona.id);
+  const adjustment = getPlanAdjustment(dateString, adjustments);
+  const tasks = source.tasks.map((item, index) => {
+    const id = persona.id === 'dual_worker' ? `base_${day}_${index}` : `${persona.id}_${day}_${index}`;
+    return adjustTask(addTaskEvidence({ ...item, id }), adjustment);
+  });
   return {
     ...source,
-    dayType: day === 0 || day === 6 ? '周末 · 8 小时计划' : '工作日 · 4 小时计划',
+    persona,
+    dayType: `${day === 0 || day === 6 ? '周末' : '工作日'} · ${tasks.reduce((sum, item) => sum + item.minutes, 0)} 分钟计划`,
     tip: TIPS[day % TIPS.length],
-    tasks: source.tasks.map((item, index) => ({
-      ...item,
-      id: `base_${day}_${index}`
-    }))
+    tasks,
+    adjustment: adjustment ? {
+      weekStart: adjustment.weekStart,
+      weekEnd: adjustment.weekEnd,
+      title: adjustment.title,
+      mode: adjustment.mode,
+      reason: adjustment.reason
+    } : null
   };
 }
 
@@ -165,7 +366,7 @@ function calculateStreak(allDays = {}, todayString) {
   return streak;
 }
 
-function updatePlannerCompletion(dayData = {}, dateString) {
+function updatePlannerCompletion(dayData = {}, dateString, adjustments = {}, personaId = 'dual_worker') {
   dayData.planner = {
     checked: {},
     customTasks: [],
@@ -174,8 +375,8 @@ function updatePlannerCompletion(dayData = {}, dateString) {
   };
   dayData.planner.checked = dayData.planner.checked || {};
   dayData.planner.customTasks = dayData.planner.customTasks || [];
-  const tasks = [...getPlan(dateString).tasks, ...dayData.planner.customTasks];
-  const complete = tasks.length > 0 && tasks.every(item => dayData.planner.checked[item.id]);
+  const tasks = [...getPlan(dateString, adjustments, personaId).tasks, ...dayData.planner.customTasks];
+  const complete = tasks.length > 0 && tasks.every(item => isTaskComplete(item, dayData, dateString));
   dayData.planner.complete = complete;
   if (complete) {
     dayData.complete = true;
@@ -200,12 +401,19 @@ function getResourceDescription(resource = '') {
 }
 
 module.exports = {
+  EVIDENCE_REQUIRED_FROM,
+  STUDY_PERSONAS,
+  addTaskEvidence,
   calculateStreak,
   formatDateKey,
   getLanguageLabel,
   getPlan,
   getResourceDescription,
+  getStudyPersona,
+  getTaskEvidence,
   getWeek,
+  getWeekStart,
   shiftDate,
+  isTaskComplete,
   updatePlannerCompletion
 };

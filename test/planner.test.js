@@ -3,19 +3,32 @@ const {
   calculateStreak,
   getPlan,
   getWeek,
+  getWeekStart,
   shiftDate,
   updatePlannerCompletion
 } = require('../utils/planner.js');
 
 const sundayPlan = getPlan('2026-07-19');
 assert.strictEqual(sundayPlan.focus, '巩固与检测');
-assert.strictEqual(sundayPlan.dayType, '周末 · 8 小时计划');
+assert.strictEqual(sundayPlan.dayType, '周末 · 480 分钟计划');
 assert.strictEqual(sundayPlan.tasks.length, 6);
 assert.strictEqual(
   sundayPlan.tasks.reduce((sum, item) => sum + item.minutes, 0),
   480
 );
 assert.strictEqual(sundayPlan.tasks[2].executionType, 'speak');
+assert.ok(sundayPlan.tasks.every(task => task.evidenceRequired));
+assert.strictEqual(sundayPlan.tasks[2].evidenceType, 'audio');
+
+const commutePlan = getPlan('2026-07-21', {}, 'commute_listening');
+assert.strictEqual(commutePlan.persona.name, '通勤听力计划');
+assert.strictEqual(commutePlan.tasks.length, 5);
+assert.ok(commutePlan.tasks.every(task => task.id.startsWith('commute_listening_')));
+assert.ok(commutePlan.tasks.some(task => task.title.includes('去程精听')));
+
+const jlptBusinessPlan = getPlan('2026-07-21', {}, 'jlpt_business');
+assert.strictEqual(jlptBusinessPlan.persona.name, 'JLPT＋职场英语');
+assert.ok(jlptBusinessPlan.tasks.some(task => task.title.includes('职场')));
 
 const week = getWeek('2026-07-19', {
   '2026-07-18': { planner: { complete: true } },
@@ -27,6 +40,7 @@ assert.strictEqual(week[5].complete, true);
 assert.strictEqual(week[6].active, true);
 
 assert.strictEqual(shiftDate('2026-07-19', -1), '2026-07-18');
+assert.strictEqual(getWeekStart('2026-07-21'), '2026-07-20');
 assert.strictEqual(calculateStreak({
   '2026-07-19': { planner: { complete: true } },
   '2026-07-18': { complete: true },
@@ -49,5 +63,47 @@ assert.strictEqual(plannerDay.complete, true, 'study completion should not be cl
 plannerDay.planner.customTasks = [];
 assert.strictEqual(updatePlannerCompletion(plannerDay, '2026-07-19'), true);
 assert.strictEqual(plannerDay.completeSource, 'planner');
+
+const nextWeekAdjustment = {
+  weekStart: '2026-07-27',
+  weekEnd: '2026-08-02',
+  title: '减负测试',
+  mode: '减负保连续',
+  reason: '测试调整规则',
+  minuteScale: 0.75,
+  englishBonusMinutes: 10,
+  outputBonusMinutes: 0
+};
+const adjustedTuesday = getPlan('2026-07-28', {
+  '2026-07-27': nextWeekAdjustment
+});
+assert.strictEqual(adjustedTuesday.adjustment.mode, '减负保连续');
+assert.strictEqual(adjustedTuesday.tasks[0].minutes, 25);
+assert.strictEqual(adjustedTuesday.tasks[5].minutes, 55);
+assert.strictEqual(adjustedTuesday.tasks[5].id, 'base_2_5', 'adjustments must preserve task ids');
+
+const adaptiveTuesday = getPlan('2026-07-28', {
+  '2026-07-27': {
+    ...nextWeekAdjustment,
+    minuteScale: 1,
+    englishBonusMinutes: 0,
+    taskOverrides: {
+      base_2_0: {
+        action: 'replace',
+        replacement: {
+          title: '轻量回忆：日语单词复习',
+          minutes: 15,
+          resource: '闭卷回忆 3 个词',
+          executionType: 'word'
+        },
+        note: '连续跳过，已主动替换'
+      }
+    }
+  }
+});
+assert.strictEqual(adaptiveTuesday.tasks[0].title, '轻量回忆：日语单词复习');
+assert.strictEqual(adaptiveTuesday.tasks[0].minutes, 15);
+assert.strictEqual(adaptiveTuesday.tasks[0].adaptiveAction, 'replace');
+assert.strictEqual(adaptiveTuesday.tasks[0].evidenceType, 'recall');
 
 console.log('planner tests passed');

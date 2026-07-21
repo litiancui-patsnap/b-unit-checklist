@@ -1,0 +1,48 @@
+<view class="evidence-page" wx:if="{{ task }}">
+  <view class="task-card">
+    <view class="eyebrow">{{ date }} · 学习结果确认</view>
+    <view class="task-title">{{ task.title }}</view>
+    <view class="task-meta">{{ task.minutes }} 分钟 · {{ task.resource }}</view>
+    <view class="evidence-badge">{{ evidenceLabel }}</view>
+  </view>
+
+  <view class="proof-card">
+    <view class="section-title">提交可验证的学习结果</view>
+    <view class="proof-prompt">{{ evidencePrompt }}</view>
+
+    <view class="record-panel" wx:if="{{ evidenceType === 'audio' }}">
+      <view class="record-state {{ isRecording ? 'recording' : '' }}">
+        <view class="record-dot"></view>
+        <text>{{ isRecording ? '正在录音，最长 60 秒' : (audioPath ? '录音已准备好' : '还没有录音') }}</text>
+      </view>
+      <view class="record-actions">
+        <button class="primary-action" wx:if="{{ !isRecording }}" bindtap="startRecording">{{ audioPath ? '重新录制' : '开始录音' }}</button>
+        <button class="danger-action" wx:else bindtap="stopRecording">停止录音</button>
+        <button class="secondary-action" wx:if="{{ audioPath && !isRecording }}" bindtap="playRecording">回听 {{ audioDurationText }}</button>
+        <button class="text-action" wx:if="{{ audioPath && !isRecording }}" bindtap="clearRecording">删除</button>
+      </view>
+      <view class="permission-tip" wx:if="{{ !canRecord }}">当前基础库不支持录音，可升级微信后重试。</view>
+    </view>
+
+    <view wx:else>
+      <textarea
+        class="evidence-input"
+        value="{{ evidenceText }}"
+        bindinput="onEvidenceInput"
+        maxlength="600"
+        auto-height
+        placeholder="写下你真正记住、说出或能独立完成的内容"
+      />
+      <view class="input-tip">不追求长，必须是脱离原材料后自己的输出。</view>
+    </view>
+  </view>
+
+  <view class="value-card">
+    <view class="value-title">为什么不能只勾选完成？</view>
+    <view class="value-item">1. 证据帮助你区分“看过”与“真正会用”。</view>
+    <view class="value-item">2. 周复盘会统计证据覆盖率，找到虚假完成。</view>
+    <view class="value-item">3. 下周调整会结合跳过率，主动降低或替换难任务。</view>
+  </view>
+
+  <button class="submit-button" bindtap="submitEvidence" loading="{{ saving }}">{{ hasExistingEvidence ? '更新证据并保持完成' : '提交证据并完成任务' }}</button>
+</view>

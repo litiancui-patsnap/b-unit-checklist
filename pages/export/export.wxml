@@ -59,10 +59,30 @@
       <view class="card-title">输出证据</view>
       <view class="output-metrics">
         <view class="output-metric"><text class="output-value">{{ outputDays }}</text><text class="output-label">日记天数</text></view>
-        <view class="output-metric"><text class="output-value">{{ wordCount }}</text><text class="output-label">新增单词</text></view>
-        <view class="output-metric"><text class="output-value">{{ completedTasks }}/{{ totalTasks }}</text><text class="output-label">计划任务</text></view>
+        <view class="output-metric"><text class="output-value">{{ evidenceCount }}</text><text class="output-label">结果证据</text></view>
+        <view class="output-metric"><text class="output-value">{{ evidenceRate }}%</text><text class="output-label">证据覆盖</text></view>
       </view>
     </view>
+  </view>
+
+  <view class="review-card skipped-card">
+    <view class="card-heading">
+      <view>
+        <view class="card-title">最常跳过的任务</view>
+        <view class="card-description">按最近 28 天有学习动作的日期统计，下周会优先降难或替换。</view>
+      </view>
+    </view>
+    <view class="skipped-list" wx:if="{{ skippedTasks.length }}">
+      <view class="skipped-item" wx:for="{{ skippedTasks }}" wx:key="id">
+        <view class="skipped-rank">{{ index + 1 }}</view>
+        <view class="skipped-copy">
+          <text class="skipped-title">{{ item.title }}</text>
+          <text class="skipped-summary">{{ item.summary }}</text>
+        </view>
+        <view class="skipped-rate">{{ item.skipRate }}%</view>
+      </view>
+    </view>
+    <view class="empty-skipped" wx:else>至少积累 2 周同类任务记录后，这里会自动识别稳定跳过项。</view>
   </view>
 
   <view class="review-card" id="day-detail" wx:if="{{ selectedDay }}">
@@ -83,6 +103,7 @@
         <view class="task-copy">
           <view class="task-title">{{ item.title }}</view>
           <view class="task-meta"><text class="language-tag {{ item.languageClass }}">{{ item.languageLabel }}</text><text>{{ item.resource }}</text></view>
+          <view class="task-evidence {{ item.hasEvidence ? 'task-evidence-done' : '' }}">{{ item.evidenceText }}</view>
         </view>
         <text class="task-minutes">{{ item.minutes }} 分钟</text>
       </view>
@@ -91,12 +112,44 @@
   </view>
 
   <view class="review-card">
-    <view class="card-title">本周复盘建议</view>
+    <view class="card-title">最近 7 天复盘建议</view>
     <view class="insight-list">
       <view class="insight-item insight-{{ item.tone }}" wx:for="{{ insights }}" wx:key="title">
         <view class="insight-dot"></view>
         <view class="insight-copy"><text class="insight-title">{{ item.title }}</text><text class="insight-description">{{ item.description }}</text></view>
       </view>
+    </view>
+  </view>
+
+  <view class="review-card next-week-card" wx:if="{{ nextWeekPlan }}">
+    <view class="card-heading">
+      <view>
+        <view class="card-title">下周调整方案</view>
+        <view class="card-description">根据最近 7 天完成节奏、语言投入和输出记录自动生成。</view>
+      </view>
+      <view class="plan-status {{ nextWeekPlan.applied ? 'plan-status-applied' : '' }}">{{ nextWeekPlan.statusText }}</view>
+    </view>
+    <view class="plan-summary">
+      <view class="plan-mode">{{ nextWeekPlan.mode }}</view>
+      <view class="plan-title">{{ nextWeekPlan.title }}</view>
+      <view class="plan-range">{{ nextWeekPlan.rangeLabel }} · 目标完成 {{ nextWeekPlan.targetDays }} 天</view>
+      <view class="plan-reason">{{ nextWeekPlan.reason }}</view>
+    </view>
+    <view class="plan-minute-grid">
+      <view class="plan-minute-box"><text class="plan-minute-label">原计划</text><text class="plan-minute-value">{{ nextWeekPlan.originalMinutes }}</text><text class="plan-minute-unit">分钟 / 周</text></view>
+      <view class="plan-arrow">→</view>
+      <view class="plan-minute-box plan-minute-box-active"><text class="plan-minute-label">调整后</text><text class="plan-minute-value">{{ nextWeekPlan.adjustedMinutes }}</text><text class="plan-minute-unit">{{ nextWeekPlan.differenceText }}</text></view>
+    </view>
+    <view class="plan-change-list">
+      <view class="plan-change" wx:for="{{ nextWeekPlan.changes }}" wx:key="*this"><text class="plan-change-check">✓</text><text>{{ item }}</text></view>
+    </view>
+    <view class="plan-actions" wx:if="{{ nextWeekPlan.applied }}">
+      <view class="plan-primary-action" bindtap="previewNextWeekPlan">查看下周计划</view>
+      <view class="plan-secondary-action" bindtap="generateNextWeekPlan">重新生成</view>
+      <view class="plan-cancel-action" bindtap="cancelNextWeekPlan">取消调整</view>
+    </view>
+    <view class="plan-actions" wx:else>
+      <view class="plan-primary-action plan-primary-action-full" bindtap="generateNextWeekPlan">一键生成并应用</view>
     </view>
   </view>
 

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { buildLearningReview, getDaySummary } = require('../utils/learningInsights.js');
+const { buildLearningReview, generateNextWeekAdjustment, getDaySummary } = require('../utils/learningInsights.js');
 const { getPlan } = require('../utils/planner.js');
 
 const today = '2026-07-21';
@@ -24,6 +24,10 @@ const allDays = {
         [todayTasks[0].id]: true,
         [todayTasks[5].id]: true,
         custom_1: true
+      },
+      evidence: {
+        [todayTasks[0].id]: { type: todayTasks[0].evidenceType, createdAt: Date.now() },
+        [todayTasks[5].id]: { type: todayTasks[5].evidenceType, createdAt: Date.now() }
       },
       customTasks: [
         { id: 'custom_1', title: '英语复述', language: 'en', minutes: 15, resource: '学习日志' }
@@ -59,5 +63,44 @@ const emptyReview = buildLearningReview({}, today);
 assert.strictEqual(emptyReview.activeDays, 0);
 assert.strictEqual(emptyReview.completedDays, 0);
 assert.strictEqual(emptyReview.insights[0].title, '先完成今天第一项');
+
+const adjustment = generateNextWeekAdjustment({}, today);
+assert.strictEqual(adjustment.weekStart, '2026-07-27');
+assert.strictEqual(adjustment.weekEnd, '2026-08-02');
+assert.strictEqual(adjustment.mode, '减负保连续');
+assert.strictEqual(adjustment.minuteScale, 0.75);
+assert.strictEqual(adjustment.englishBonusMinutes, 10);
+assert.strictEqual(adjustment.outputBonusMinutes, 5);
+assert.ok(adjustment.changes.length >= 3);
+assert.ok(adjustment.adjustedMinutes > 0);
+
+const repeatedSkipDays = {};
+['2026-06-30', '2026-07-07', '2026-07-14', '2026-07-21'].forEach(date => {
+  const tasks = getPlan(date).tasks;
+  repeatedSkipDays[date] = {
+    planner: {
+      checked: Object.fromEntries(tasks.map((task, index) => [task.id, index !== 0])),
+      customTasks: [],
+      evidence: Object.fromEntries(tasks.slice(1).map(task => [task.id, {
+        type: task.evidenceType,
+        createdAt: Date.now()
+      }])),
+      complete: false
+    }
+  };
+});
+const skipReview = buildLearningReview(repeatedSkipDays, today);
+assert.strictEqual(skipReview.mostSkippedTask.id, 'base_2_0');
+assert.strictEqual(skipReview.mostSkippedTask.skipRate, 100);
+assert.strictEqual(skipReview.mostSkippedTask.skipped, 4);
+
+const adaptiveAdjustment = generateNextWeekAdjustment(repeatedSkipDays, today);
+assert.strictEqual(adaptiveAdjustment.taskOverrides.base_2_0.action, 'replace');
+assert.ok(adaptiveAdjustment.changes.some(change => change.includes('日语单词复习')));
+const adaptivePlan = getPlan('2026-07-28', {
+  [adaptiveAdjustment.weekStart]: adaptiveAdjustment
+});
+assert.strictEqual(adaptivePlan.tasks[0].adaptiveAction, 'replace');
+assert.ok(adaptivePlan.tasks[0].title.includes('轻量回忆'));
 
 console.log('learning insights tests passed');

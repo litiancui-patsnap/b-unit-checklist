@@ -204,6 +204,7 @@ function getDefaultConfig(goal = 'daily', dailyIntensity = 'B') {
     hasOnboarded: false,
     learningGoal: goal,
     dailyIntensity,
+    studyPersona: 'dual_worker',
     aiService: {
       enabled: true,
       mode: 'http',

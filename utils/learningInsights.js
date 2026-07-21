@@ -1,8 +1,8 @@
-const { calculateStreak, getPlan, shiftDate } = require('./planner.js');
+const { calculateStreak, getPlan, getWeekStart, isTaskComplete, shiftDate } = require('./planner.js');
 
-function getPlannerTasks(dateString, dayData = {}) {
+function getPlannerTasks(dateString, dayData = {}, adjustments = {}, personaId = 'dual_worker') {
   const customTasks = dayData?.planner?.customTasks || [];
-  return [...getPlan(dateString).tasks, ...customTasks];
+  return [...getPlan(dateString, adjustments, personaId).tasks, ...customTasks];
 }
 
 function getCheckedMap(dayData = {}) {
@@ -21,12 +21,13 @@ function hasLegacyActivity(dayData = {}) {
   );
 }
 
-function getDaySummary(dateString, dayData = null) {
+function getDaySummary(dateString, dayData = null, adjustments = {}, personaId = 'dual_worker') {
   const safeDayData = dayData || {};
-  const plan = getPlan(dateString);
-  const tasks = getPlannerTasks(dateString, safeDayData);
+  const plan = getPlan(dateString, adjustments, personaId);
+  const tasks = getPlannerTasks(dateString, safeDayData, adjustments, personaId);
   const checked = getCheckedMap(safeDayData);
-  const completedTasks = tasks.filter(task => checked[task.id]);
+  const evidence = safeDayData?.planner?.evidence || {};
+  const completedTasks = tasks.filter(task => isTaskComplete(task, safeDayData, dateString));
   const plannedMinutes = tasks.reduce((sum, task) => sum + Number(task.minutes || 0), 0);
   const completedMinutes = completedTasks.reduce((sum, task) => sum + Number(task.minutes || 0), 0);
   const plannerProgress = plannedMinutes ? Math.round(completedMinutes / plannedMinutes * 100) : 0;
@@ -61,9 +62,12 @@ function getDaySummary(dateString, dayData = null) {
     reviewMinutes,
     diary: String(safeDayData.diary || '').trim(),
     wordCount: (safeDayData.words || []).length,
+    evidenceCount: completedTasks.filter(task => evidence[task.id]).length,
     tasks: tasks.map(task => ({
       ...task,
-      checked: Boolean(checked[task.id])
+      checked: isTaskComplete(task, safeDayData, dateString),
+      hasEvidence: Boolean(evidence[task.id]),
+      evidence: evidence[task.id] || null
     }))
   };
 }
@@ -115,6 +119,14 @@ function buildInsights(metrics) {
     });
   }
 
+  if (metrics.mostSkippedTask) {
+    insights.push({
+      tone: 'warning',
+      title: `最常跳过：${metrics.mostSkippedTask.title}`,
+      description: `${metrics.mostSkippedTask.summary}，跳过率 ${metrics.mostSkippedTask.skipRate}%。生成下周方案时会优先缩短或替换它。`
+    });
+  }
+
   if (metrics.completedMinutes === 0) {
     insights.push({
       tone: 'neutral',
@@ -155,13 +167,67 @@ function buildInsights(metrics) {
     });
   }
 
+  if (metrics.completedTasks > 0 && metrics.evidenceRate < 60) {
+    insights.push({
+      tone: 'warning',
+      title: '完成记录还缺少结果证据',
+      description: `本周 ${metrics.completedTasks} 个已完成任务中有 ${metrics.evidenceCount} 个留下证据。录音、造句、复述或回忆记录会让复盘更可信。`
+    });
+  } else if (metrics.evidenceCount > 0) {
+    insights.push({
+      tone: 'success',
+      title: '学习结果已经可验证',
+      description: `本周留下 ${metrics.evidenceCount} 份学习证据，完成记录不再只是勾选。`
+    });
+  }
+
   return insights;
 }
 
-function buildLearningReview(allDays = {}, todayString) {
+function getSkippedTaskStats(allDays = {}, todayString, adjustments = {}, personaId = 'dual_worker') {
+  const stats = {};
+  createDateRange(todayString, 28).forEach(date => {
+    const dayData = allDays[date];
+    if (!dayData) return;
+    const checked = getCheckedMap(dayData);
+    const hasPlannerAction = Object.values(checked).some(Boolean) || Object.keys(dayData?.planner?.evidence || {}).length > 0;
+    if (!hasPlannerAction && !hasLegacyActivity(dayData)) return;
+    getPlan(date, adjustments, personaId).tasks.forEach(task => {
+      const current = stats[task.id] || {
+        id: task.id,
+        title: task.title,
+        language: task.language,
+        minutes: task.minutes,
+        executionType: task.executionType,
+        evidenceType: task.evidenceType,
+        planned: 0,
+        completed: 0,
+        skipped: 0
+      };
+      current.planned += 1;
+      if (isTaskComplete(task, dayData, date)) {
+        current.completed += 1;
+      } else {
+        current.skipped += 1;
+      }
+      stats[task.id] = current;
+    });
+  });
+
+  return Object.values(stats)
+    .filter(item => item.planned >= 2 && item.skipped > 0)
+    .map(item => ({
+      ...item,
+      skipRate: Math.round(item.skipped / item.planned * 100),
+      summary: `${item.planned} 次计划中跳过 ${item.skipped} 次`
+    }))
+    .sort((left, right) => right.skipRate - left.skipRate || right.skipped - left.skipped || right.minutes - left.minutes);
+}
+
+function buildLearningReview(allDays = {}, todayString, adjustments = {}, personaId = 'dual_worker') {
   const weekDates = createDateRange(todayString, 7);
   const weekDays = weekDates.map(date => {
-    const summary = getDaySummary(date, allDays[date]);
+    const summary = getDaySummary(date, allDays[date], adjustments, personaId);
     return {
       ...summary,
       weekday: getWeekdayLabel(date),
@@ -171,7 +237,7 @@ function buildLearningReview(allDays = {}, todayString) {
     };
   });
   const recentDates = createDateRange(todayString, 30);
-  const recentSummaries = recentDates.map(date => getDaySummary(date, allDays[date]));
+  const recentSummaries = recentDates.map(date => getDaySummary(date, allDays[date], adjustments, personaId));
   const activeDays = weekDays.filter(day => day.hasActivity).length;
   const completedDays = weekDays.filter(day => day.complete).length;
   const completedTasks = weekDays.reduce((sum, day) => sum + day.completedTasks, 0);
@@ -185,6 +251,8 @@ function buildLearningReview(allDays = {}, todayString) {
   const englishRatio = languageMinutes ? 100 - japaneseRatio : 0;
   const outputDays = weekDays.filter(day => day.diary).length;
   const wordCount = weekDays.reduce((sum, day) => sum + day.wordCount, 0);
+  const evidenceCount = weekDays.reduce((sum, day) => sum + day.evidenceCount, 0);
+  const skippedTasks = getSkippedTaskStats(allDays, todayString, adjustments, personaId);
   const recentRecords = recentSummaries
     .filter(day => day.hasActivity)
     .reverse()
@@ -209,6 +277,10 @@ function buildLearningReview(allDays = {}, todayString) {
     englishRatio,
     outputDays,
     wordCount,
+    evidenceCount,
+    evidenceRate: completedTasks ? Math.round(evidenceCount / completedTasks * 100) : 0,
+    skippedTasks,
+    mostSkippedTask: skippedTasks[0] || null,
     streak: calculateStreak(allDays, todayString)
   };
 
@@ -221,9 +293,156 @@ function buildLearningReview(allDays = {}, todayString) {
   };
 }
 
+function getNextWeekStart(todayString) {
+  const weekday = new Date(`${todayString}T00:00:00`).getDay();
+  const offset = weekday === 0 ? 1 : 8 - weekday;
+  return shiftDate(todayString, offset);
+}
+
+function getWeekMinutes(weekStart, adjustments = {}, personaId = 'dual_worker') {
+  return Array.from({ length: 7 }, (_, index) => shiftDate(weekStart, index))
+    .reduce((sum, date) => sum + getPlan(date, adjustments, personaId).tasks.reduce((taskSum, task) => taskSum + task.minutes, 0), 0);
+}
+
+function getAdaptiveOverride(skippedTask) {
+  const shouldReplace = skippedTask.skipped >= 3 && skippedTask.skipRate >= 75;
+  if (!shouldReplace) {
+    return {
+      action: 'lower',
+      minuteScale: 0.6,
+      note: `过去 28 天跳过率 ${skippedTask.skipRate}%，已缩短为轻量版`
+    };
+  }
+
+  const replacements = {
+    audio: {
+      title: `轻量录音：${skippedTask.title}`,
+      minutes: Math.min(20, skippedTask.minutes),
+      resource: '只选 20～30 秒片段',
+      executionType: 'speak'
+    },
+    sentence: {
+      title: `轻量造句：用今天内容写 2 句`,
+      minutes: Math.min(15, skippedTask.minutes),
+      resource: '学习日志',
+      executionType: 'write'
+    },
+    diary: {
+      title: '轻量日记：只写 2 句',
+      minutes: Math.min(15, skippedTask.minutes),
+      resource: '学习日志',
+      executionType: 'write'
+    },
+    recall: {
+      title: `轻量回忆：${skippedTask.title}`,
+      minutes: Math.min(15, skippedTask.minutes),
+      resource: '闭卷回忆 3 个要点',
+      executionType: 'word'
+    },
+    retell: {
+      title: `轻量复述：${skippedTask.title}`,
+      minutes: Math.min(20, skippedTask.minutes),
+      resource: '只处理一个最小片段',
+      executionType: skippedTask.executionType || 'read'
+    }
+  };
+  return {
+    action: 'replace',
+    replacement: replacements[skippedTask.evidenceType] || replacements.retell,
+    note: `连续跳过 ${skippedTask.skipped} 次，已主动替换为更小动作`
+  };
+}
+
+function generateNextWeekAdjustment(allDays = {}, todayString, adjustments = {}, personaId = 'dual_worker') {
+  const review = buildLearningReview(allDays, todayString, adjustments, personaId);
+  const weekStart = getNextWeekStart(todayString);
+  const weekEnd = shiftDate(weekStart, 6);
+  let minuteScale = 1;
+  let mode = '稳定推进';
+  let title = '保持当前节奏';
+  let reason = '最近一周完成节奏较稳定，下周不增加额外任务，继续巩固已有动作。';
+
+  if (review.completedDays <= 2) {
+    minuteScale = 0.75;
+    mode = '减负保连续';
+    title = '先把计划缩小，再恢复连续性';
+    reason = `最近 7 天完成 ${review.completedDays} 天，当前计划可能偏重。下周先降低单项时长，优先恢复连续学习。`;
+  } else if (review.completedDays <= 4) {
+    minuteScale = 0.9;
+    mode = '聚焦关键任务';
+    title = '减少负担，保留主线';
+    reason = `最近 7 天完成 ${review.completedDays} 天，已经有基础节奏。下周小幅减负，把注意力放在真正能完成的任务上。`;
+  } else if (review.completedDays >= 6) {
+    mode = '稳定强化';
+    title = '保持总量，增加有效输出';
+    reason = `最近 7 天完成 ${review.completedDays} 天，节奏稳定。下周保持任务总量，只增强英语输出质量。`;
+  }
+
+  const englishBonusMinutes = review.englishRatio < 20 ? 10 : 0;
+  const outputBonusMinutes = review.outputDays === 0 ? 5 : 0;
+  const adaptiveTasks = review.skippedTasks.slice(0, 2);
+  const taskOverrides = Object.fromEntries(adaptiveTasks.map(item => [item.id, getAdaptiveOverride(item)]));
+  const changes = [];
+  adaptiveTasks.forEach(item => {
+    const override = taskOverrides[item.id];
+    changes.push(override.action === 'replace'
+      ? `“${item.title}”常被跳过，下周替换为轻量动作`
+      : `“${item.title}”跳过率 ${item.skipRate}%，下周时长降低 40%`);
+  });
+  if (minuteScale < 1) {
+    changes.push(`各任务时长整体下调约 ${Math.round((1 - minuteScale) * 100)}%`);
+  }
+  if (englishBonusMinutes) {
+    changes.push('每天的英语任务增加 10 分钟，避免英语只停留在计划中');
+  }
+  if (outputBonusMinutes) {
+    changes.push('口语或写作任务增加 5 分钟，补上可见输出');
+  }
+  if (!changes.length) {
+    changes.push('保持当前任务结构和时长，不额外增加学习材料');
+  }
+
+  const adjustment = {
+    id: `adjustment_${weekStart}`,
+    weekStart,
+    weekEnd,
+    generatedAt: Date.now(),
+    sourceRange: review.rangeLabel,
+    mode,
+    title,
+    reason,
+    minuteScale,
+    englishBonusMinutes,
+    outputBonusMinutes,
+    taskOverrides,
+    adaptiveTasks,
+    targetDays: Math.min(7, Math.max(3, review.completedDays + 1)),
+    changes
+  };
+  const adjustmentMap = {
+    ...adjustments,
+    [weekStart]: adjustment
+  };
+  const originalMinutes = getWeekMinutes(weekStart, {}, personaId);
+  const adjustedMinutes = getWeekMinutes(weekStart, adjustmentMap, personaId);
+
+  return {
+    ...adjustment,
+    originalMinutes,
+    adjustedMinutes,
+    minuteDifference: adjustedMinutes - originalMinutes,
+    rangeLabel: `${weekStart.slice(5).replace('-', '/')} - ${weekEnd.slice(5).replace('-', '/')}`,
+    applied: false
+  };
+}
+
 module.exports = {
   buildLearningReview,
   createDateRange,
+  generateNextWeekAdjustment,
   getDaySummary,
-  getPlannerTasks
+  getNextWeekStart,
+  getPlannerTasks,
+  getSkippedTaskStats,
+  getWeekStart
 };

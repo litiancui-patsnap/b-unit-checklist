@@ -67,7 +67,7 @@ pastPage.openTask({
     }
   }
 });
-assert.strictEqual(toastTitle, '仅今天的任务可进入学习');
+assert.strictEqual(toastTitle, '仅今天的任务可提交证据');
 assert.strictEqual(navigatedUrl, '');
 
 const today = getToday();
@@ -85,11 +85,56 @@ todayPage.openTask({
     dataset: {
       type: 'speak',
       id: 'base_0_2',
-      title: 'TED 跟读与口头复述'
+      title: 'TED 跟读与口头复述',
+      language: 'en'
     }
   }
 });
 assert.ok(navigatedUrl.startsWith('/pages/study/study?taskType=speak'));
 assert.ok(storageData.days[today], 'opening an execution task should persist its planner day');
+
+const evidencePage = createPage({
+  selectedDate: today,
+  tasks: [{
+    id: 'base_2_0',
+    title: '日语单词复习',
+    language: 'jp',
+    evidenceRequired: true,
+    evidenceLabel: '回忆证据'
+  }]
+});
+evidencePage.currentDayData = {
+  planner: { checked: {}, customTasks: [], evidence: {}, complete: false }
+};
+evidencePage.currentPlanAdjustments = {};
+evidencePage.currentPersonaId = 'dual_worker';
+evidencePage.toggleTask({ currentTarget: { dataset: { id: 'base_2_0' } } });
+assert.ok(navigatedUrl.startsWith('/pages/evidence/evidence?taskId=base_2_0'));
+assert.strictEqual(evidencePage.currentDayData.planner.checked.base_2_0, undefined, 'evidence-required tasks cannot be checked directly');
+
+const nextWeekStart = '2026-07-27';
+storageData.meta.plannerAdjustments = {
+  [nextWeekStart]: {
+    weekStart: nextWeekStart,
+    weekEnd: '2026-08-02',
+    title: '减少负担，保留主线',
+    mode: '聚焦关键任务',
+    reason: '根据本周复盘生成',
+    minuteScale: 0.8,
+    englishBonusMinutes: 10,
+    outputBonusMinutes: 0
+  }
+};
+storageData.meta.plannerPreviewDate = nextWeekStart;
+const previewPage = createPage();
+const previewDate = previewPage.consumePlannerPreviewDate();
+assert.strictEqual(previewDate, nextWeekStart);
+assert.strictEqual(storageData.meta.plannerPreviewDate, undefined, 'preview date should be consumed once');
+previewPage.setData({ selectedDate: previewDate });
+previewPage.loadPlan();
+assert.strictEqual(previewPage.data.planAdjustment.mode, '聚焦关键任务');
+assert.strictEqual(previewPage.data.tasks[0].minutes, 40);
+assert.strictEqual(previewPage.data.tasks[5].minutes, 50);
+assert.strictEqual(previewPage.data.tasks[5].canExecute, false, 'future tasks should remain non-executable');
 
 console.log('home planner page tests passed');

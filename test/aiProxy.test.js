@@ -1,5 +1,6 @@
 const assert = require('assert');
 const {
+  handleEvent,
   normalizeAudioUrl,
   parseJsonContent,
   parseYoudaoWord,
@@ -34,4 +35,12 @@ assert.strictEqual(word.translation, 'n. 焦点; v. 集中');
 assert.strictEqual(word.example, 'I need to focus.');
 assert.strictEqual(word.source, 'youdao');
 
-console.log('ai proxy tests passed');
+(async () => {
+  const health = await handleEvent({ action: 'health' }, {});
+  assert.strictEqual(health.ok, true);
+  assert.strictEqual(health.service, 'ai-proxy');
+  console.log('ai proxy tests passed');
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

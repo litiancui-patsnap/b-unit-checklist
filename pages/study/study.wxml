@@ -13,7 +13,7 @@
         <text class="planner-task-label">当前计划任务</text>
         <text class="planner-task-title">{{ plannerTaskTitle }}</text>
       </view>
-      <button class="planner-task-button" bindtap="completePlannerTask">完成并返回计划</button>
+      <button class="planner-task-button" bindtap="completePlannerTask">提交证据并完成</button>
     </view>
 
     <!-- 日期与完成状态组件 -->

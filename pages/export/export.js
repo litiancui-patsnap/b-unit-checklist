@@ -1,7 +1,7 @@
 const { generateExportText } = require('../../utils/export.js');
 const { getToday } = require('../../utils/date.js');
-const { buildLearningReview, getDaySummary } = require('../../utils/learningInsights.js');
-const { getAllDays } = require('../../utils/storage.js');
+const { buildLearningReview, generateNextWeekAdjustment, getDaySummary } = require('../../utils/learningInsights.js');
+const { getAllDays, getConfig, getMeta, setMeta } = require('../../utils/storage.js');
 
 function getLanguageLabel(language) {
   if (language === 'jp') return '日语';
@@ -19,8 +19,22 @@ function decorateDay(summary, dateLabel = '') {
     tasks: summary.tasks.map(task => ({
       ...task,
       languageLabel: getLanguageLabel(task.language),
-      languageClass: `language-${task.language}`
+      languageClass: `language-${task.language}`,
+      evidenceText: task.hasEvidence ? `已提交${task.evidence?.label || '证据'}` : '未提交证据'
     }))
+  };
+}
+
+function decorateAdjustment(adjustment, applied = false) {
+  return {
+    ...adjustment,
+    applied,
+    statusText: applied ? '已应用' : '待生成',
+    differenceText: adjustment.minuteDifference > 0
+      ? `增加 ${adjustment.minuteDifference} 分钟`
+      : adjustment.minuteDifference < 0
+        ? `减少 ${Math.abs(adjustment.minuteDifference)} 分钟`
+        : '总时长不变'
   };
 }
 
@@ -42,6 +56,10 @@ Page({
     englishRatio: 0,
     outputDays: 0,
     wordCount: 0,
+    evidenceCount: 0,
+    evidenceRate: 0,
+    skippedTasks: [],
+    mostSkippedTask: null,
     weekDays: [],
     insights: [],
     recentRecords: [],
@@ -52,6 +70,7 @@ Page({
     totalDays: 0,
     completedExportDays: 0,
     showReport: false,
+    nextWeekPlan: null,
     isLoading: true
   },
 
@@ -71,13 +90,19 @@ Page({
   loadRecords() {
     const today = getToday();
     const allDays = getAllDays();
-    const review = buildLearningReview(allDays, today);
+    const config = getConfig();
+    const personaId = config.studyPersona || 'dual_worker';
+    const meta = getMeta();
+    const adjustments = meta.plannerAdjustments || {};
+    const review = buildLearningReview(allDays, today, adjustments, personaId);
+    const nextWeekDraft = generateNextWeekAdjustment(allDays, today, adjustments, personaId);
+    const savedAdjustment = adjustments[nextWeekDraft.weekStart];
     const currentSelection = review.weekDays.some(day => day.date === this.data.selectedDate)
       ? this.data.selectedDate
       : today;
     const selectedWeekDay = review.weekDays.find(day => day.date === currentSelection);
     const selectedDay = decorateDay(
-      getDaySummary(currentSelection, allDays[currentSelection]),
+      getDaySummary(currentSelection, allDays[currentSelection], adjustments, personaId),
       selectedWeekDay?.dateLabel || currentSelection
     );
     const exportResult = generateExportText(this.data.onlyCompleted);
@@ -99,6 +124,10 @@ Page({
       englishRatio: review.englishRatio,
       outputDays: review.outputDays,
       wordCount: review.wordCount,
+      evidenceCount: review.evidenceCount,
+      evidenceRate: review.evidenceRate,
+      skippedTasks: review.skippedTasks.slice(0, 3),
+      mostSkippedTask: review.mostSkippedTask,
       weekDays: review.weekDays.map(day => ({
         ...day,
         barHeight: Math.max(day.progress, 8),
@@ -111,8 +140,11 @@ Page({
       exportText: exportResult.text,
       totalDays: exportResult.totalCount,
       completedExportDays: exportResult.completedCount,
+      nextWeekPlan: decorateAdjustment(savedAdjustment || nextWeekDraft, Boolean(savedAdjustment)),
       isLoading: false
     });
+    this.currentAdjustments = adjustments;
+    this.currentPersonaId = personaId;
   },
 
   selectDay(e) {
@@ -122,7 +154,7 @@ Page({
     const weekDay = this.data.weekDays.find(day => day.date === date);
     this.setData({
       selectedDate: date,
-      selectedDay: decorateDay(getDaySummary(date, allDays[date]), weekDay?.dateLabel || date),
+      selectedDay: decorateDay(getDaySummary(date, allDays[date], this.currentAdjustments, this.currentPersonaId), weekDay?.dateLabel || date),
       weekDays: this.data.weekDays.map(day => ({
         ...day,
         selected: day.date === date
@@ -137,7 +169,7 @@ Page({
     const record = this.data.recentRecords.find(item => item.date === date);
     this.setData({
       selectedDate: date,
-      selectedDay: decorateDay(getDaySummary(date, allDays[date]), record?.dateLabel || date),
+      selectedDay: decorateDay(getDaySummary(date, allDays[date], this.currentAdjustments, this.currentPersonaId), record?.dateLabel || date),
       weekDays: this.data.weekDays.map(day => ({
         ...day,
         selected: day.date === date
@@ -174,6 +206,56 @@ Page({
   refreshRecords() {
     this.loadRecords();
     wx.showToast({ title: '复盘已刷新', icon: 'success' });
+  },
+
+  generateNextWeekPlan() {
+    const today = getToday();
+    const allDays = getAllDays();
+    const meta = getMeta();
+    const adjustments = meta.plannerAdjustments || {};
+    const adjustment = generateNextWeekAdjustment(allDays, today, adjustments, this.currentPersonaId);
+    const appliedAdjustment = {
+      ...adjustment,
+      applied: true
+    };
+    meta.plannerAdjustments = {
+      ...adjustments,
+      [adjustment.weekStart]: appliedAdjustment
+    };
+    setMeta(meta);
+    this.currentAdjustments = meta.plannerAdjustments;
+    this.setData({ nextWeekPlan: decorateAdjustment(appliedAdjustment, true) });
+    wx.showToast({ title: '下周方案已应用', icon: 'success' });
+  },
+
+  cancelNextWeekPlan() {
+    const plan = this.data.nextWeekPlan;
+    if (!plan?.applied) return;
+    wx.showModal({
+      title: '取消下周调整',
+      content: '取消后，下周将恢复原始语言学习计划。',
+      success: result => {
+        if (!result.confirm) return;
+        const meta = getMeta();
+        const adjustments = { ...(meta.plannerAdjustments || {}) };
+        delete adjustments[plan.weekStart];
+        meta.plannerAdjustments = adjustments;
+        setMeta(meta);
+        this.currentAdjustments = adjustments;
+        const draft = generateNextWeekAdjustment(getAllDays(), getToday(), adjustments, this.currentPersonaId);
+        this.setData({ nextWeekPlan: decorateAdjustment(draft, false) });
+        wx.showToast({ title: '已恢复原计划', icon: 'success' });
+      }
+    });
+  },
+
+  previewNextWeekPlan() {
+    const plan = this.data.nextWeekPlan;
+    if (!plan?.weekStart) return;
+    const meta = getMeta();
+    meta.plannerPreviewDate = plan.weekStart;
+    setMeta(meta);
+    wx.switchTab({ url: '/pages/home/home' });
   },
 
   goTodayPlan() {

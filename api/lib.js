@@ -13,6 +13,13 @@ async function handleEvent(event = {}, env = process.env) {
   const action = event.action || 'learning.content';
 
   try {
+    if (action === 'health') {
+      return {
+        ok: true,
+        service: 'ai-proxy',
+        timestamp: Date.now()
+      };
+    }
     if (action === 'dictionary.lookup') {
       return handleDictionary(event, env);
     }

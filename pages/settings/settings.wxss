@@ -118,6 +118,65 @@ page {
   background: #f8f9fc;
 }
 
+.persona-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  margin-top: 24rpx;
+}
+
+.persona-option {
+  padding: 22rpx;
+  border: 1rpx solid #dfe5ef;
+  border-radius: 21rpx;
+  background: #f8fafc;
+}
+
+.persona-option-active {
+  border-color: #3478e5;
+  background: #edf4ff;
+  box-shadow: inset 0 0 0 1rpx rgba(52, 120, 229, 0.14);
+}
+
+.persona-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.persona-option-name {
+  color: #172033;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.persona-option-check {
+  padding: 5rpx 11rpx;
+  border-radius: 999rpx;
+  background: #3478e5;
+  color: #fff;
+  font-size: 17rpx;
+  font-weight: 700;
+}
+
+.persona-option-description,
+.persona-option-promise {
+  display: block;
+  margin-top: 9rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+}
+
+.persona-option-description {
+  color: #66758f;
+}
+
+.persona-option-promise {
+  color: #3478e5;
+  font-weight: 700;
+}
+
 .goal-option-active {
   border-color: #3478e5;
   background: #edf4ff;
@@ -324,11 +383,18 @@ page {
   background: #2b9c71;
 }
 
+.status-dot.pending,
+.status-dot.checking {
+  background: #3478e5;
+}
+
 .status-dot.offline {
   background: #e6a84b;
 }
 
 .status-text {
+  flex: 1;
+  min-width: 0;
   font-size: 20rpx;
 }
 
@@ -338,6 +404,21 @@ page {
 
 .status-text.offline {
   color: #8b652e;
+}
+
+.status-text.pending,
+.status-text.checking {
+  color: #3478e5;
+}
+
+.service-check-action {
+  flex: 0 0 auto;
+  padding: 8rpx 13rpx;
+  border-radius: 999rpx;
+  background: #eaf2ff;
+  color: #3478e5;
+  font-size: 18rpx;
+  font-weight: 700;
 }
 
 .developer-settings {

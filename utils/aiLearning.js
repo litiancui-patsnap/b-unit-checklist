@@ -59,6 +59,9 @@ const FALLBACK_CONTENT = {
   )
 };
 
+const SERVICE_REQUEST_TIMEOUT = 8000;
+const SERVICE_HEALTH_TIMEOUT = 5000;
+
 function word(term, phonetic, translation, example, category) {
   return {
     term,
@@ -105,6 +108,22 @@ function buildServiceUrl(service, path) {
   return `${normalized.baseUrl}${cleanPath}`;
 }
 
+function createTimedResolver(resolve, timeout) {
+  let settled = false;
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    resolve(null);
+  }, timeout);
+
+  return value => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    resolve(value);
+  };
+}
+
 function requestLearningService(config, path, payload) {
   const service = normalizeAIService(config);
 
@@ -119,9 +138,11 @@ function requestLearningService(config, path, payload) {
   }
 
   return new Promise(resolve => {
+    const finish = createTimedResolver(resolve, SERVICE_REQUEST_TIMEOUT);
     wx.request({
       url,
       method: 'POST',
+      timeout: SERVICE_REQUEST_TIMEOUT,
       data: {
         provider: service.provider,
         ...payload
@@ -129,8 +150,8 @@ function requestLearningService(config, path, payload) {
       header: {
         'content-type': 'application/json'
       },
-      success: res => resolve(res.data || null),
-      fail: () => resolve(null)
+      success: res => finish(res.data || null),
+      fail: () => finish(null)
     });
   });
 }
@@ -154,6 +175,7 @@ function requestCloudFunction(service, path, payload) {
   }
 
   return new Promise(resolve => {
+    const finish = createTimedResolver(resolve, SERVICE_REQUEST_TIMEOUT);
     wx.cloud.callFunction({
       name: service.cloudFunctionName,
       data: {
@@ -161,8 +183,69 @@ function requestCloudFunction(service, path, payload) {
         provider: service.provider,
         ...payload
       },
-      success: res => resolve(res.result || null),
-      fail: () => resolve(null)
+      success: res => finish(res.result || null),
+      fail: () => finish(null)
+    });
+  });
+}
+
+function createHealthResult(available, mode, startedAt, reason = '') {
+  return {
+    available,
+    mode,
+    reason,
+    checkedAt: Date.now(),
+    elapsedMs: Date.now() - startedAt
+  };
+}
+
+function checkLearningService(config = {}) {
+  const service = normalizeAIService(config);
+  const startedAt = Date.now();
+
+  if (!service.enabled) {
+    return Promise.resolve(createHealthResult(false, service.mode, startedAt, 'disabled'));
+  }
+
+  if (service.mode === 'cloud') {
+    if (typeof wx === 'undefined' || !wx.cloud || !wx.cloud.callFunction) {
+      return Promise.resolve(createHealthResult(false, service.mode, startedAt, 'unavailable'));
+    }
+
+    return new Promise(resolve => {
+      const finish = createTimedResolver(value => {
+        resolve(value || createHealthResult(false, service.mode, startedAt, 'timeout'));
+      }, SERVICE_HEALTH_TIMEOUT);
+      wx.cloud.callFunction({
+        name: service.cloudFunctionName,
+        data: { action: 'health' },
+        success: res => {
+          const result = res.result || {};
+          finish(createHealthResult(result.ok !== false, service.mode, startedAt, result.ok === false ? 'service_error' : ''));
+        },
+        fail: () => finish(createHealthResult(false, service.mode, startedAt, 'request_failed'))
+      });
+    });
+  }
+
+  if (typeof wx === 'undefined' || !wx.request) {
+    return Promise.resolve(createHealthResult(false, service.mode, startedAt, 'unavailable'));
+  }
+
+  return new Promise(resolve => {
+    const finish = createTimedResolver(value => {
+      resolve(value || createHealthResult(false, service.mode, startedAt, 'timeout'));
+    }, SERVICE_HEALTH_TIMEOUT);
+    wx.request({
+      url: `${service.baseUrl}/health`,
+      method: 'GET',
+      timeout: SERVICE_HEALTH_TIMEOUT,
+      success: res => {
+        const statusCode = Number(res.statusCode || 0);
+        const available = statusCode >= 200 && statusCode < 300 && res.data?.ok !== false;
+        finish(createHealthResult(available, service.mode, startedAt, available ? '' : 'service_error'));
+      },
+      fail: () => finish(createHealthResult(false, service.mode, startedAt, 'request_failed'))
     });
   });
 }
@@ -243,6 +326,7 @@ async function requestTtsAudio(config, text) {
 
 module.exports = {
   buildServiceUrl,
+  checkLearningService,
   getActionFromPath,
   getDailyContent,
   getFallbackWordSuggestions,
@@ -251,5 +335,7 @@ module.exports = {
   normalizeAIService,
   normalizeDailyContent,
   normalizeWordSuggestion,
-  requestTtsAudio
+  requestTtsAudio,
+  SERVICE_HEALTH_TIMEOUT,
+  SERVICE_REQUEST_TIMEOUT
 };

@@ -4,7 +4,6 @@ const { countCheckedByItems, normalizeCheckedMap } = require('../../utils/checkl
 const { generateId, getGoalLabel, getIntensityLabel, getTaskTypeLabel } = require('../../utils/defaultConfig.js');
 const { getPronunciationAudioSource, normalizePronunciationText } = require('../../utils/pronunciation.js');
 const { getDailyContent, getWordSuggestions, lookupWord, requestTtsAudio } = require('../../utils/aiLearning.js');
-const { updatePlannerCompletion } = require('../../utils/planner.js');
 const {
   SPEAKING_SCENES,
   WORD_CATEGORY_OPTIONS,
@@ -179,15 +178,9 @@ Page({
     if (!plannerTaskId || !plannerDate) {
       return;
     }
-    const dayData = getDayData(plannerDate) || {
-      planner: { checked: {}, customTasks: [], complete: false }
-    };
-    dayData.planner.checked = dayData.planner.checked || {};
-    dayData.planner.checked[plannerTaskId] = true;
-    updatePlannerCompletion(dayData, plannerDate);
-    setDayData(plannerDate, dayData);
-    wx.showToast({ title: '计划任务已完成', icon: 'success' });
-    setTimeout(() => wx.navigateBack(), 500);
+    wx.navigateTo({
+      url: `/pages/evidence/evidence?taskId=${encodeURIComponent(plannerTaskId)}&date=${plannerDate}&returnDelta=2`
+    });
   },
 
   onUnload() {

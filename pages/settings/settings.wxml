@@ -1,6 +1,6 @@
 <view class="strategy-page">
   <view class="strategy-hero">
-    <view class="hero-eyebrow">英语学习策略</view>
+    <view class="hero-eyebrow">语言学习策略</view>
     <view class="hero-title">{{ selectedGoalLabel }}</view>
     <view class="hero-description">{{ selectedGoalDescription }}</view>
     <view class="hero-metrics">
@@ -15,6 +15,31 @@
       <view class="hero-metric">
         <text class="metric-label">英语动作</text>
         <text class="metric-value">{{ strategyTaskCount }} 项</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="strategy-card persona-card">
+    <view class="card-heading">
+      <view>
+        <view class="card-title">首页学习人群模板</view>
+        <view class="card-description">模板会直接改变首页任务结构、资料场景和每天的结果证据。</view>
+      </view>
+    </view>
+    <view class="persona-list">
+      <view
+        class="persona-option {{ item.id === studyPersona ? 'persona-option-active' : '' }}"
+        wx:for="{{ studyPersonaOptions }}"
+        wx:key="id"
+        data-persona="{{ item.id }}"
+        bindtap="selectStudyPersona"
+      >
+        <view class="persona-option-head">
+          <text class="persona-option-name">{{ item.name }}</text>
+          <text class="persona-option-check" wx:if="{{ item.id === studyPersona }}">当前</text>
+        </view>
+        <text class="persona-option-description">{{ item.description }}</text>
+        <text class="persona-option-promise">{{ item.promise }}</text>
       </view>
     </view>
   </view>
@@ -127,6 +152,7 @@
     <view class="service-status">
       <view class="status-dot {{ aiServiceStatusClass }}"></view>
       <text class="status-text {{ aiServiceStatusClass }}">{{ aiServiceStatusText }}</text>
+      <view class="service-check-action" wx:if="{{ aiServiceCanCheck }}" bindtap="checkAIService">{{ aiServiceChecking ? '检测中' : '重新检测' }}</view>
     </view>
 
     <view class="developer-settings" wx:if="{{ showDeveloperSettings }}">
@@ -185,9 +211,9 @@
   </view>
 
   <view class="action-card">
-    <button class="save-button" bindtap="saveConfig">保存并应用英语策略</button>
+    <button class="save-button" bindtap="saveConfig">保存并应用学习策略</button>
     <button class="plan-button" bindtap="goTodayPlan">返回今日计划</button>
-    <view class="reset-action" bindtap="resetConfig">恢复默认英语方案</view>
+    <view class="reset-action" bindtap="resetConfig">恢复默认学习方案</view>
   </view>
 
   <view class="version-entry" bindtap="onVersionTap">版本 {{ configVersion }}</view>

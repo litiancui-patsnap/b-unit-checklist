@@ -14,9 +14,18 @@
   <view class="hero-card card">
     <view class="hero-main">
       <view class="hero-copy">
+        <view class="persona-line">
+          <text class="persona-name">{{ personaName }}</text>
+          <text class="persona-promise">{{ personaPromise }}</text>
+        </view>
         <view class="eyebrow">{{ dayType }}</view>
         <view class="focus-title">{{ focusTitle }}</view>
         <view class="focus-description">{{ focusDescription }}</view>
+        <view class="adjustment-note" wx:if="{{ planAdjustment }}">
+          <view class="adjustment-label">复盘调整方案 · {{ planAdjustment.mode }}</view>
+          <view class="adjustment-title">{{ planAdjustment.title }}</view>
+          <view class="adjustment-description">{{ planAdjustment.reason }}</view>
+        </view>
       </view>
       <view class="progress-ring" style="background: conic-gradient(#2b9c71 {{ progress }}%, #e9edf4 0);">
         <view class="progress-inner">
@@ -38,22 +47,26 @@
         <view class="section-title-main">今日任务</view>
         <view class="section-caption">{{ tasks.length }} 项任务 · 已完成 {{ completedTaskCount }} 项</view>
       </view>
-      <view class="execution-hint">英语任务可进入小程序学习</view>
+      <view class="execution-hint">完成需提交学习证据</view>
     </view>
 
     <view class="task-list">
       <view class="task-row {{ item.checked ? 'task-done' : '' }}" wx:for="{{ tasks }}" wx:key="id">
         <checkbox class="task-checkbox" checked="{{ item.checked }}" color="#2b9c71" catchtap="toggleTask" data-id="{{ item.id }}" />
-        <view class="task-content" bindtap="openTask" data-type="{{ item.executionType }}" data-id="{{ item.id }}" data-title="{{ item.title }}">
+        <view class="task-content" bindtap="openTask" data-type="{{ item.executionType }}" data-id="{{ item.id }}" data-title="{{ item.title }}" data-language="{{ item.language }}">
           <view class="task-title">{{ item.title }}</view>
           <view class="task-meta">
             <text class="language-tag {{ item.languageClass }}">{{ item.languageLabel }}</text>
             <text class="resource-name">{{ item.resource }}</text>
           </view>
+          <view class="task-proof-row">
+            <text class="proof-tag {{ item.hasEvidence ? 'proof-done' : '' }}">{{ item.hasEvidence ? '✓ 已留证据' : item.evidenceLabel }}</text>
+            <text class="adaptive-tag" wx:if="{{ item.adaptiveNote }}">智能调整 · {{ item.adaptiveNote }}</text>
+          </view>
         </view>
         <view class="task-side">
           <text class="task-minutes">{{ item.minutes }} 分钟</text>
-          <text class="task-enter" wx:if="{{ item.canExecute }}" bindtap="openTask" data-type="{{ item.executionType }}" data-id="{{ item.id }}" data-title="{{ item.title }}">进入 ›</text>
+          <text class="task-enter" wx:if="{{ item.canExecute }}" bindtap="openTask" data-type="{{ item.executionType }}" data-id="{{ item.id }}" data-title="{{ item.title }}" data-language="{{ item.language }}">{{ item.hasEvidence ? '查看证据' : '开始并提交' }} ›</text>
           <text class="task-delete" wx:if="{{ item.isCustom }}" catchtap="deleteCustomTask" data-id="{{ item.id }}">删除</text>
         </view>
       </view>

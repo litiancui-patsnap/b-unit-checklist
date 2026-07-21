@@ -1,10 +1,14 @@
 const assert = require('assert');
 const {
   buildServiceUrl,
+  checkLearningService,
   getFallbackWordSuggestions,
+  getDailyContent,
   normalizeAIService,
   normalizeDailyContent,
-  normalizeWordSuggestion
+  normalizeWordSuggestion,
+  SERVICE_HEALTH_TIMEOUT,
+  SERVICE_REQUEST_TIMEOUT
 } = require('../utils/aiLearning.js');
 
 const config = {
@@ -42,4 +46,63 @@ assert.strictEqual(getFallbackWordSuggestions('business')[0].category, '职场')
 assert.strictEqual(normalizeDailyContent({}, 'exam').source, 'fallback');
 assert.ok(normalizeDailyContent({}, 'exam').longSentence.includes('/'));
 
-console.log('ai learning tests passed');
+(async () => {
+  let capturedRequest = null;
+  const httpConfig = {
+    aiService: {
+      ...config.aiService,
+      mode: 'http'
+    }
+  };
+
+  global.wx = {
+    request(options) {
+      capturedRequest = options;
+      options.success({ statusCode: 200, data: { ok: true } });
+    }
+  };
+
+  const httpHealth = await checkLearningService(httpConfig);
+  assert.strictEqual(httpHealth.available, true);
+  assert.strictEqual(capturedRequest.url, 'https://example.com/api/health');
+  assert.strictEqual(capturedRequest.method, 'GET');
+  assert.strictEqual(capturedRequest.timeout, SERVICE_HEALTH_TIMEOUT);
+
+  global.wx = {
+    request(options) {
+      capturedRequest = options;
+      options.fail({ errMsg: 'request:fail timeout' });
+    }
+  };
+
+  const fallbackContent = await getDailyContent(httpConfig, 'daily', '2026-07-21');
+  assert.strictEqual(fallbackContent.source, 'fallback');
+  assert.strictEqual(capturedRequest.method, 'POST');
+  assert.strictEqual(capturedRequest.timeout, SERVICE_REQUEST_TIMEOUT);
+
+  let cloudRequest = null;
+  global.wx = {
+    cloud: {
+      callFunction(options) {
+        cloudRequest = options;
+        options.success({ result: { ok: true } });
+      }
+    }
+  };
+
+  const cloudHealth = await checkLearningService({
+    aiService: {
+      enabled: true,
+      mode: 'cloud',
+      cloudFunctionName: 'aiProxy'
+    }
+  });
+  assert.strictEqual(cloudHealth.available, true);
+  assert.strictEqual(cloudRequest.data.action, 'health');
+
+  delete global.wx;
+  console.log('ai learning tests passed');
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

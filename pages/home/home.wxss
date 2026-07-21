@@ -102,6 +102,28 @@ page {
   min-width: 0;
 }
 
+.persona-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+
+.persona-name {
+  padding: 7rpx 13rpx;
+  border-radius: 999rpx;
+  background: #17233d;
+  color: #fff;
+  font-size: 19rpx;
+  font-weight: 750;
+}
+
+.persona-promise {
+  color: #66758f;
+  font-size: 19rpx;
+}
+
 .eyebrow {
   color: #71809b;
   font-size: 23rpx;
@@ -121,6 +143,34 @@ page {
   font-size: 25rpx;
   font-weight: 600;
   line-height: 1.65;
+}
+
+.adjustment-note {
+  margin-top: 20rpx;
+  padding: 18rpx 20rpx;
+  border: 1rpx solid #cfe0fb;
+  border-radius: 18rpx;
+  background: #f2f7ff;
+}
+
+.adjustment-label {
+  color: #3478e5;
+  font-size: 18rpx;
+  font-weight: 800;
+}
+
+.adjustment-title {
+  margin-top: 6rpx;
+  color: #263149;
+  font-size: 22rpx;
+  font-weight: 750;
+}
+
+.adjustment-description {
+  margin-top: 6rpx;
+  color: #71809b;
+  font-size: 19rpx;
+  line-height: 1.5;
 }
 
 .progress-ring {
@@ -262,6 +312,37 @@ page {
   align-items: center;
   gap: 12rpx;
   margin-top: 10rpx;
+}
+
+.task-proof-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 9rpx;
+}
+
+.proof-tag,
+.adaptive-tag {
+  padding: 5rpx 10rpx;
+  border-radius: 999rpx;
+  font-size: 17rpx;
+  font-weight: 700;
+}
+
+.proof-tag {
+  color: #8a6330;
+  background: #fff5e4;
+}
+
+.proof-done {
+  color: #217d59;
+  background: #eaf7f1;
+}
+
+.adaptive-tag {
+  color: #7350b5;
+  background: #f1ebff;
 }
 
 .language-tag {

@@ -7,7 +7,7 @@ const today = getToday();
 const tasks = getPlan(today).tasks;
 let capturedPage = null;
 let switchedUrl = '';
-const storageData = {
+let storageData = {
   config: {
     ...getDefaultConfig('daily', 'B'),
     hasOnboarded: true
@@ -19,6 +19,14 @@ const storageData = {
       planner: {
         checked: { [tasks[0].id]: true },
         customTasks: [],
+        evidence: {
+          [tasks[0].id]: {
+            type: tasks[0].evidenceType,
+            label: tasks[0].evidenceLabel,
+            text: '能闭卷回忆三个重点',
+            createdAt: Date.now()
+          }
+        },
         complete: false
       }
     }
@@ -34,9 +42,14 @@ global.wx = {
   getStorageSync() {
     return storageData;
   },
-  setStorageSync() {},
   showToast() {},
+  setStorageSync(key, value) {
+    storageData = value;
+  },
   pageScrollTo() {},
+  showModal({ success }) {
+    success({ confirm: true });
+  },
   switchTab({ url }) {
     switchedUrl = url;
   },
@@ -60,12 +73,26 @@ page.loadRecords();
 assert.strictEqual(page.data.weekDays.length, 7);
 assert.strictEqual(page.data.selectedDate, today);
 assert.strictEqual(page.data.selectedDay.completedTasks, 1);
+assert.strictEqual(page.data.evidenceCount, 1);
 assert.strictEqual(page.data.outputDays, 1);
 assert.strictEqual(page.data.wordCount, 1);
 assert.ok(page.data.insights.length >= 3);
 assert.ok(page.data.exportText.includes('语言学习复盘 / 周报'));
 assert.ok(page.data.exportText.includes('本周计划完成'));
 assert.strictEqual(page.data.totalDays, 1, 'empty calendar dates should not count as learning records');
+
+page.generateNextWeekPlan();
+const nextWeekStart = page.data.nextWeekPlan.weekStart;
+assert.strictEqual(page.data.nextWeekPlan.applied, true);
+assert.ok(storageData.meta.plannerAdjustments[nextWeekStart]);
+
+page.previewNextWeekPlan();
+assert.strictEqual(storageData.meta.plannerPreviewDate, nextWeekStart);
+assert.strictEqual(switchedUrl, '/pages/home/home');
+
+page.cancelNextWeekPlan();
+assert.strictEqual(page.data.nextWeekPlan.applied, false);
+assert.strictEqual(storageData.meta.plannerAdjustments[nextWeekStart], undefined);
 
 page.goTodayPlan();
 assert.strictEqual(switchedUrl, '/pages/home/home');

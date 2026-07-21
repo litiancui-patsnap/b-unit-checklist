@@ -3,6 +3,8 @@ const { getDefaultConfig } = require('../utils/defaultConfig.js');
 
 let capturedPage = null;
 let switchedUrl = '';
+let healthAvailable = true;
+let healthRequest = null;
 let storageData = {
   config: {
     ...getDefaultConfig('daily', 'B'),
@@ -25,6 +27,14 @@ global.wx = {
   },
   showToast() {},
   showModal() {},
+  request(options) {
+    healthRequest = options;
+    if (healthAvailable) {
+      options.success({ statusCode: 200, data: { ok: true } });
+    } else {
+      options.fail({ errMsg: 'request:fail timeout' });
+    }
+  },
   switchTab({ url }) {
     switchedUrl = url;
   }
@@ -41,27 +51,47 @@ const page = {
   }
 };
 
-page.loadConfig();
-assert.strictEqual(page.data.selectedGoalLabel, '日常英语');
-assert.strictEqual(page.data.selectedIntensityLabel, '标准');
-assert.strictEqual(page.data.strategyTaskCount, storageData.config.templates.B.items.length);
-assert.strictEqual(page.data.planPreviews.find(item => item.active).key, 'B');
+(async () => {
+  page.loadConfig();
+  assert.strictEqual(page.data.selectedGoalLabel, '日常英语');
+  assert.strictEqual(page.data.selectedIntensityLabel, '标准');
+  assert.strictEqual(page.data.strategyTaskCount, storageData.config.templates.B.items.length);
+  assert.strictEqual(page.data.planPreviews.find(item => item.active).key, 'B');
 
-page.selectLearningGoal({ currentTarget: { dataset: { index: 1 } } });
-assert.strictEqual(page.data.learningGoal, 'spoken');
-assert.ok(page.data.templateB.title.includes('口语表达'));
-assert.strictEqual(page.data.selectedGoalLabel, '口语表达');
+  await page.checkAIService();
+  assert.strictEqual(page.data.aiServiceStatusClass, 'enabled');
+  assert.ok(page.data.aiServiceStatusText.includes('服务正常'));
+  assert.strictEqual(healthRequest.url, 'https://b-unit-checklist-main.vercel.app/health');
 
-page.selectDailyIntensity({ currentTarget: { dataset: { index: 2 } } });
-assert.strictEqual(page.data.dailyIntensity, 'C');
-assert.strictEqual(page.data.planPreviews.find(item => item.active).key, 'C');
+  healthAvailable = false;
+  await page.checkAIService();
+  assert.strictEqual(page.data.aiServiceStatusClass, 'offline');
+  assert.ok(page.data.aiServiceStatusText.includes('本地内容'));
 
-page.saveConfig();
-assert.strictEqual(storageData.config.learningGoal, 'spoken');
-assert.strictEqual(storageData.config.dailyIntensity, 'C');
-assert.ok(storageData.config.templates.C.title.includes('口语表达'));
+  page.selectLearningGoal({ currentTarget: { dataset: { index: 1 } } });
+  assert.strictEqual(page.data.learningGoal, 'spoken');
+  assert.ok(page.data.templateB.title.includes('口语表达'));
+  assert.strictEqual(page.data.selectedGoalLabel, '口语表达');
 
-page.goTodayPlan();
-assert.strictEqual(switchedUrl, '/pages/home/home');
+  page.selectDailyIntensity({ currentTarget: { dataset: { index: 2 } } });
+  assert.strictEqual(page.data.dailyIntensity, 'C');
+  assert.strictEqual(page.data.planPreviews.find(item => item.active).key, 'C');
 
-console.log('settings strategy tests passed');
+  page.selectStudyPersona({ currentTarget: { dataset: { persona: 'jlpt_business' } } });
+  assert.strictEqual(page.data.studyPersona, 'jlpt_business');
+
+  healthAvailable = true;
+  page.saveConfig();
+  assert.strictEqual(storageData.config.learningGoal, 'spoken');
+  assert.strictEqual(storageData.config.dailyIntensity, 'C');
+  assert.strictEqual(storageData.config.studyPersona, 'jlpt_business');
+  assert.ok(storageData.config.templates.C.title.includes('口语表达'));
+
+  page.goTodayPlan();
+  assert.strictEqual(switchedUrl, '/pages/home/home');
+
+  console.log('settings strategy tests passed');
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

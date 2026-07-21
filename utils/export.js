@@ -1,16 +1,19 @@
 const { getRecentDates, getToday } = require('./date.js');
-const { getAllDays, getConfig } = require('./storage.js');
+const { getAllDays, getConfig, getMeta } = require('./storage.js');
 const { countCheckedByItems } = require('./checklist.js');
 const { TASK_TYPES, getGoalLabel, getIntensityLabel, getTaskTypeLabel } = require('./defaultConfig.js');
 const { collectWordsFromDays, getSceneStats } = require('./learning.js');
 const { buildLearningReview, getDaySummary } = require('./learningInsights.js');
+const { getStudyPersona } = require('./planner.js');
 
 function generateExportText(onlyCompleted = false) {
   const dates = getRecentDates(30);
   const recent7Dates = getRecentDates(7);
   const allDays = getAllDays();
   const config = getConfig();
-  const review = buildLearningReview(allDays, getToday());
+  const personaId = config.studyPersona || 'dual_worker';
+  const adjustments = getMeta().plannerAdjustments || {};
+  const review = buildLearningReview(allDays, getToday(), adjustments, personaId);
 
   const weeklyCompletedCount = review.completedDays;
   const weeklyDiaryCount = recent7Dates.filter(date => (allDays[date]?.diary || '').trim()).length;
@@ -31,6 +34,11 @@ function generateExportText(onlyCompleted = false) {
   text += `本周计划完成：${review.completedTasks}/${review.totalTasks} 项\n`;
   text += `本周完成时长：${review.completedMinutes} 分钟\n`;
   text += `日语 / 英语投入：${review.japaneseMinutes} / ${review.englishMinutes} 分钟\n`;
+  text += `学习人群模板：${getStudyPersona(personaId).name}\n`;
+  text += `结果证据：${review.evidenceCount} 份，覆盖率 ${review.evidenceRate}%\n`;
+  if (review.mostSkippedTask) {
+    text += `最常跳过：${review.mostSkippedTask.title}（${review.mostSkippedTask.skipRate}%）\n`;
+  }
   text += `连续学习：${review.streak} 天\n\n`;
   text += '英语执行记录\n';
   text += '-'.repeat(40) + '\n';
@@ -53,7 +61,7 @@ function generateExportText(onlyCompleted = false) {
 
   dates.reverse().forEach(date => {
     const dayData = allDays[date];
-    const daySummary = getDaySummary(date, dayData);
+    const daySummary = getDaySummary(date, dayData, adjustments, personaId);
 
     if (!dayData) {
       return;
@@ -82,7 +90,7 @@ function generateExportText(onlyCompleted = false) {
     const contentCount = Object.keys(dayData.contentChecks || {}).filter(key => dayData.contentChecks[key]).length;
     const quizText = dayData.quiz?.completed ? `${dayData.quiz.score || 0}` : '-';
 
-    text += `${date}  完成:${completeStatus}  计划:${daySummary.completedTasks}/${daySummary.totalTasks}  时长:${daySummary.completedMinutes}/${daySummary.plannedMinutes}分钟  英语强度:${intensity}  英语任务:${itemsChecked}/${itemsTotal}  单词:${wordCount}  跟读:${sceneStats.completedLines}  小测:${quizText}\n`;
+    text += `${date}  完成:${completeStatus}  计划:${daySummary.completedTasks}/${daySummary.totalTasks}  证据:${daySummary.evidenceCount}  时长:${daySummary.completedMinutes}/${daySummary.plannedMinutes}分钟  英语强度:${intensity}  英语任务:${itemsChecked}/${itemsTotal}  单词:${wordCount}  跟读:${sceneStats.completedLines}  小测:${quizText}\n`;
     if ((dayData.diary || '').trim()) {
       text += `  英文日记：${dayData.diary.trim()}\n`;
     }

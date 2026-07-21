@@ -1,11 +1,13 @@
 const { getToday } = require('../../utils/date.js');
-const { getAllDays, getConfig, getDayData, setDayData } = require('../../utils/storage.js');
+const { getAllDays, getConfig, getDayData, getMeta, setDayData, setMeta } = require('../../utils/storage.js');
 const {
+  addTaskEvidence,
   calculateStreak,
   getLanguageLabel,
   getPlan,
   getResourceDescription,
   getWeek,
+  isTaskComplete,
   shiftDate,
   updatePlannerCompletion
 } = require('../../utils/planner.js');
@@ -34,6 +36,7 @@ function createDayData(config, stored = null) {
     planner: {
       checked: {},
       customTasks: [],
+      evidence: {},
       complete: false,
       ...(stored?.planner || {})
     }
@@ -65,6 +68,9 @@ Page({
     englishRatio: 0,
     resources: [],
     dailyTip: '',
+    planAdjustment: null,
+    personaName: '',
+    personaPromise: '',
     customTitle: '',
     languageOptions: LANGUAGE_OPTIONS,
     languageIndex: 0,
@@ -80,7 +86,7 @@ Page({
       return;
     }
     this.skipNextShowReload = true;
-    this.setData({ selectedDate: getToday() });
+    this.setData({ selectedDate: this.consumePlannerPreviewDate() || getToday() });
     this.loadPlan();
   },
 
@@ -89,25 +95,46 @@ Page({
       this.skipNextShowReload = false;
       return;
     }
+    const previewDate = this.consumePlannerPreviewDate();
+    if (previewDate) {
+      this.setData({ selectedDate: previewDate });
+    }
     if (this.data.selectedDate) {
       this.loadPlan();
     }
+  },
+
+  consumePlannerPreviewDate() {
+    const meta = getMeta();
+    const previewDate = meta.plannerPreviewDate;
+    if (!previewDate) return '';
+    delete meta.plannerPreviewDate;
+    setMeta(meta);
+    return previewDate;
   },
 
   loadPlan() {
     const selectedDate = this.data.selectedDate || getToday();
     const today = getToday();
     const config = getConfig();
+    const meta = getMeta();
+    const adjustments = meta.plannerAdjustments || {};
     const dayData = createDayData(config, getDayData(selectedDate));
-    const plan = getPlan(selectedDate);
-    const tasks = [...plan.tasks, ...(dayData.planner.customTasks || [])].map(item => ({
-      ...item,
-      checked: Boolean(dayData.planner.checked?.[item.id]),
-      languageLabel: getLanguageLabel(item.language),
-      languageClass: `language-${item.language}`,
-      canExecute: Boolean(item.executionType && selectedDate === today),
-      isCustom: String(item.id).startsWith('custom_')
-    }));
+    const personaId = config.studyPersona || 'dual_worker';
+    const plan = getPlan(selectedDate, adjustments, personaId);
+    const evidence = dayData.planner.evidence || {};
+    const tasks = [...plan.tasks, ...(dayData.planner.customTasks || [])].map(rawItem => {
+      const item = addTaskEvidence(rawItem);
+      return {
+        ...item,
+        checked: isTaskComplete(item, dayData, selectedDate),
+        hasEvidence: Boolean(evidence[item.id]),
+        languageLabel: getLanguageLabel(item.language),
+        languageClass: `language-${item.language}`,
+        canExecute: selectedDate === today,
+        isCustom: String(item.id).startsWith('custom_')
+      };
+    });
     const plannedMinutes = tasks.reduce((sum, item) => sum + Number(item.minutes || 0), 0);
     const completedTasks = tasks.filter(item => item.checked);
     const completedMinutes = completedTasks.reduce((sum, item) => sum + Number(item.minutes || 0), 0);
@@ -128,6 +155,8 @@ Page({
     }));
 
     this.currentDayData = dayData;
+    this.currentPlanAdjustments = adjustments;
+    this.currentPersonaId = personaId;
     this.setData({
       selectedDate,
       dateTitle: formatDateTitle(selectedDate, today),
@@ -145,6 +174,9 @@ Page({
       englishRatio,
       resources,
       dailyTip: plan.tip,
+      planAdjustment: plan.adjustment,
+      personaName: plan.persona.name,
+      personaPromise: plan.persona.promise,
       isLoading: false
     });
   },
@@ -176,9 +208,14 @@ Page({
     const id = e.currentTarget.dataset.id;
     const dayData = this.currentDayData || createDayData(getConfig(), getDayData(this.data.selectedDate));
     const checked = !dayData.planner.checked[id];
+    const task = this.data.tasks.find(item => item.id === id);
+    if (checked && task?.evidenceRequired && !dayData.planner.evidence?.[id]) {
+      this.openTask({ currentTarget: { dataset: task } });
+      return;
+    }
     dayData.planner.checked[id] = checked;
 
-    updatePlannerCompletion(dayData, this.data.selectedDate);
+    updatePlannerCompletion(dayData, this.data.selectedDate, this.currentPlanAdjustments, this.currentPersonaId);
 
     setDayData(this.data.selectedDate, dayData);
     this.currentDayData = dayData;
@@ -186,22 +223,31 @@ Page({
   },
 
   openTask(e) {
-    const executionType = e.currentTarget.dataset.type;
     const taskId = e.currentTarget.dataset.id;
-    const taskTitle = e.currentTarget.dataset.title;
-    if (!executionType) {
-      wx.showToast({ title: '按任务资料开始学习', icon: 'none' });
-      return;
-    }
+    const task = this.data.tasks.find(item => item.id === taskId) || e.currentTarget.dataset;
+    const executionType = task.executionType || e.currentTarget.dataset.type;
+    const taskTitle = task.title || e.currentTarget.dataset.title;
     if (this.data.selectedDate !== getToday()) {
-      wx.showToast({ title: '仅今天的任务可进入学习', icon: 'none' });
+      wx.showToast({ title: '仅今天的任务可提交证据', icon: 'none' });
       return;
     }
     if (!getDayData(this.data.selectedDate)) {
       setDayData(this.data.selectedDate, this.currentDayData);
     }
+    if (task.hasEvidence) {
+      wx.navigateTo({
+        url: `/pages/evidence/evidence?taskId=${encodeURIComponent(taskId)}&date=${this.data.selectedDate}&returnDelta=1`
+      });
+      return;
+    }
+    if (executionType && (task.language || e.currentTarget.dataset.language) === 'en') {
+      wx.navigateTo({
+        url: `/pages/study/study?taskType=${executionType}&plannerTaskId=${encodeURIComponent(taskId)}&plannerDate=${this.data.selectedDate}&plannerTaskTitle=${encodeURIComponent(taskTitle)}`
+      });
+      return;
+    }
     wx.navigateTo({
-      url: `/pages/study/study?taskType=${executionType}&plannerTaskId=${encodeURIComponent(taskId)}&plannerDate=${this.data.selectedDate}&plannerTaskTitle=${encodeURIComponent(taskTitle)}`
+      url: `/pages/evidence/evidence?taskId=${encodeURIComponent(taskId)}&date=${this.data.selectedDate}&returnDelta=1`
     });
   },
 
@@ -227,15 +273,15 @@ Page({
     const language = LANGUAGE_OPTIONS[this.data.languageIndex] || LANGUAGE_OPTIONS[0];
     const minutes = MINUTE_OPTIONS[this.data.minuteIndex] || MINUTE_OPTIONS[0];
     const dayData = this.currentDayData || createDayData(getConfig(), getDayData(this.data.selectedDate));
-    dayData.planner.customTasks.push({
+    dayData.planner.customTasks.push(addTaskEvidence({
       id: `custom_${Date.now()}`,
       title,
       language: language.value,
       minutes,
       resource: '自定义学习资料',
       executionType: language.value === 'en' ? 'read' : ''
-    });
-    updatePlannerCompletion(dayData, this.data.selectedDate);
+    }));
+    updatePlannerCompletion(dayData, this.data.selectedDate, this.currentPlanAdjustments, this.currentPersonaId);
     setDayData(this.data.selectedDate, dayData);
     this.currentDayData = dayData;
     this.setData({ customTitle: '' });
@@ -248,7 +294,8 @@ Page({
     if (!dayData) return;
     dayData.planner.customTasks = dayData.planner.customTasks.filter(item => item.id !== id);
     delete dayData.planner.checked[id];
-    updatePlannerCompletion(dayData, this.data.selectedDate);
+    delete dayData.planner.evidence[id];
+    updatePlannerCompletion(dayData, this.data.selectedDate, this.currentPlanAdjustments, this.currentPersonaId);
     setDayData(this.data.selectedDate, dayData);
     this.loadPlan();
   },
@@ -261,7 +308,8 @@ Page({
         if (!result.confirm) return;
         const dayData = this.currentDayData;
         dayData.planner.checked = {};
-        updatePlannerCompletion(dayData, this.data.selectedDate);
+        dayData.planner.evidence = {};
+        updatePlannerCompletion(dayData, this.data.selectedDate, this.currentPlanAdjustments, this.currentPersonaId);
         setDayData(this.data.selectedDate, dayData);
         this.loadPlan();
       }

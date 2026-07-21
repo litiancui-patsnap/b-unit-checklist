@@ -3,6 +3,7 @@
     "pages/onboarding/onboarding",
     "pages/home/home",
     "pages/study/study",
+    "pages/evidence/evidence",
     "pages/settings/settings",
     "pages/export/export"
   ],

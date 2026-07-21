@@ -8,6 +8,7 @@ const {
 } = require('../utils/defaultConfig.js');
 
 const spokenConfig = getDefaultConfig('spoken', 'C');
+assert.strictEqual(spokenConfig.studyPersona, 'dual_worker');
 assert.strictEqual(spokenConfig.version, CONFIG_VERSION);
 assert.strictEqual(spokenConfig.learningGoal, 'spoken');
 assert.strictEqual(spokenConfig.dailyIntensity, 'C');

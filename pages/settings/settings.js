@@ -1,4 +1,6 @@
 const { getConfig, setConfig } = require('../../utils/storage.js');
+const { checkLearningService } = require('../../utils/aiLearning.js');
+const { STUDY_PERSONAS } = require('../../utils/planner.js');
 const {
   CONFIG_VERSION,
   DAILY_INTENSITIES,
@@ -8,18 +10,54 @@ const {
   getTemplatesForGoal
 } = require('../../utils/defaultConfig.js');
 
-function getAIServiceStatus(service = {}) {
+function getAIServiceStatus(service = {}, healthResult = null, checking = false) {
   const hasRoute = service.mode === 'cloud' || Boolean(String(service.baseUrl || '').trim());
-  if (service.enabled && hasRoute) {
+  if (!service.enabled) {
     return {
-      text: '已启用',
-      className: 'enabled'
+      text: '已关闭，当前使用本地内容',
+      className: 'offline',
+      canCheck: false
+    };
+  }
+
+  if (!hasRoute) {
+    return {
+      text: '未配置服务地址，当前使用本地内容',
+      className: 'offline',
+      canCheck: false
+    };
+  }
+
+  if (checking) {
+    return {
+      text: '正在检测在线服务...',
+      className: 'checking',
+      canCheck: true
+    };
+  }
+
+  if (healthResult?.available) {
+    return {
+      text: '服务正常，在线内容与发音可用',
+      className: 'enabled',
+      canCheck: true
+    };
+  }
+
+  if (healthResult) {
+    return {
+      text: healthResult.reason === 'timeout'
+        ? '服务响应超时，已自动使用本地内容'
+        : '服务暂不可用，已自动使用本地内容',
+      className: 'offline',
+      canCheck: true
     };
   }
 
   return {
-    text: '未连接，当前使用本地内容',
-    className: 'offline'
+    text: '已配置，等待检测',
+    className: 'pending',
+    canCheck: true
   };
 }
 
@@ -87,6 +125,8 @@ Page({
       ...item,
       displayLabel: `${item.label}：${item.description}`
     })),
+    studyPersonaOptions: STUDY_PERSONAS,
+    studyPersona: 'dual_worker',
     learningGoal: 'daily',
     dailyIntensity: 'B',
     learningGoalIndex: 0,
@@ -112,8 +152,10 @@ Page({
     config: null,
     showDeveloperSettings: false,
     versionTapCount: 0,
-    aiServiceStatusText: '已启用',
-    aiServiceStatusClass: 'enabled',
+    aiServiceStatusText: '已配置，等待检测',
+    aiServiceStatusClass: 'pending',
+    aiServiceCanCheck: true,
+    aiServiceChecking: false,
     showMethodGuide: false,
     selectedGoalLabel: '日常英语',
     selectedGoalDescription: '每天保持英语输入和输出',
@@ -162,6 +204,7 @@ Page({
       config,
       learningGoal: config.learningGoal || 'daily',
       dailyIntensity: config.dailyIntensity || 'B',
+      studyPersona: config.studyPersona || 'dual_worker',
       learningGoalIndex: learningGoalIndex >= 0 ? learningGoalIndex : 0,
       dailyIntensityIndex: dailyIntensityIndex >= 0 ? dailyIntensityIndex : 1,
       startChecklist: cloneData(config.startChecklist),
@@ -174,8 +217,10 @@ Page({
       aiService,
       aiServiceStatusText: status.text,
       aiServiceStatusClass: status.className,
+      aiServiceCanCheck: status.canCheck,
+      aiServiceChecking: false,
       ...summary
-    });
+    }, () => this.checkAIService());
   },
 
   refreshStrategySummary() {
@@ -194,10 +239,48 @@ Page({
   },
 
   refreshAIServiceStatus(aiService = this.data.aiService) {
+    this.aiServiceCheckId = (this.aiServiceCheckId || 0) + 1;
     const status = getAIServiceStatus(aiService);
     this.setData({
       aiServiceStatusText: status.text,
-      aiServiceStatusClass: status.className
+      aiServiceStatusClass: status.className,
+      aiServiceCanCheck: status.canCheck,
+      aiServiceChecking: false
+    });
+  },
+
+  async checkAIService() {
+    if (this.data.aiServiceChecking) return;
+    const aiService = cloneData(this.data.aiService || {});
+    const initialStatus = getAIServiceStatus(aiService);
+    if (!initialStatus.canCheck) {
+      this.setData({
+        aiServiceStatusText: initialStatus.text,
+        aiServiceStatusClass: initialStatus.className,
+        aiServiceCanCheck: false,
+        aiServiceChecking: false
+      });
+      return;
+    }
+
+    const checkId = (this.aiServiceCheckId || 0) + 1;
+    this.aiServiceCheckId = checkId;
+    const checkingStatus = getAIServiceStatus(aiService, null, true);
+    this.setData({
+      aiServiceStatusText: checkingStatus.text,
+      aiServiceStatusClass: checkingStatus.className,
+      aiServiceCanCheck: true,
+      aiServiceChecking: true
+    });
+
+    const healthResult = await checkLearningService({ aiService });
+    if (this.aiServiceCheckId !== checkId) return;
+    const status = getAIServiceStatus(aiService, healthResult);
+    this.setData({
+      aiServiceStatusText: status.text,
+      aiServiceStatusClass: status.className,
+      aiServiceCanCheck: status.canCheck,
+      aiServiceChecking: false
     });
   },
 
@@ -236,6 +319,13 @@ Page({
     this.onDailyIntensityChange({ detail: { value: e.currentTarget.dataset.index } });
   },
 
+  selectStudyPersona(e) {
+    const studyPersona = e.currentTarget.dataset.persona;
+    if (this.data.studyPersonaOptions.some(item => item.id === studyPersona)) {
+      this.setData({ studyPersona });
+    }
+  },
+
   onReminderSwitch(e) {
     this.setData({
       reminderEnabled: e.detail.value
@@ -256,7 +346,11 @@ Page({
     this.setData({
       aiService
     });
-    this.refreshAIServiceStatus(aiService);
+    if (aiService.enabled) {
+      this.checkAIService();
+    } else {
+      this.refreshAIServiceStatus(aiService);
+    }
   },
 
   onAIServiceInput(e) {
@@ -324,7 +418,7 @@ Page({
   },
 
   saveConfig() {
-    const { learningGoal, dailyIntensity, startChecklist, templateA, templateB, templateC, diaryTemplates, reminderEnabled, reminderTime, aiService } = this.data;
+    const { learningGoal, dailyIntensity, studyPersona, startChecklist, templateA, templateB, templateC, diaryTemplates, reminderEnabled, reminderTime, aiService } = this.data;
     const defaultConfig = getDefaultConfig(learningGoal, dailyIntensity);
     const currentTemplates = {
       A: templateA || defaultConfig.templates.A,
@@ -344,6 +438,7 @@ Page({
         hasOnboarded: true,
         learningGoal,
         dailyIntensity,
+        studyPersona,
         diaryTemplates,
         aiService: {
           enabled: Boolean(aiService.enabled && (aiService.mode === 'cloud' || aiService.baseUrl)),
@@ -390,7 +485,7 @@ Page({
   resetConfig() {
     wx.showModal({
       title: '确认恢复默认',
-      content: '将恢复默认英语学习任务,确定吗？',
+      content: '将恢复默认学习模板与英语执行任务，确定吗？',
       success: (res) => {
         if (res.confirm) {
           const defaultConfig = getDefaultConfig(this.data.learningGoal, this.data.dailyIntensity);
