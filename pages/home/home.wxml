@@ -2,7 +2,7 @@
   <view class="topbar">
     <view class="brand-block">
       <view class="brand-title">语言学习计划</view>
-      <view class="brand-subtitle">日语系统推进 · 英语持续保持 · 用完成结果代替堆积时长</view>
+      <view class="brand-subtitle">先选今天的状态，再完成最值得做的一件事</view>
     </view>
     <view class="date-nav">
       <button class="date-arrow" bindtap="previousDay">‹</button>
@@ -11,40 +11,110 @@
     </view>
   </view>
 
-  <view class="hero-card card">
-    <view class="hero-main">
-      <view class="hero-copy">
+  <view class="route-hero card">
+    <view class="route-hero-top">
+      <view class="route-heading">
         <view class="persona-line">
           <text class="persona-name">{{ personaName }}</text>
           <text class="persona-promise">{{ personaPromise }}</text>
         </view>
-        <view class="eyebrow">{{ dayType }}</view>
-        <view class="focus-title">{{ focusTitle }}</view>
-        <view class="focus-description">{{ focusDescription }}</view>
-        <view class="adjustment-note" wx:if="{{ planAdjustment }}">
-          <view class="adjustment-label">复盘调整方案 · {{ planAdjustment.mode }}</view>
-          <view class="adjustment-title">{{ planAdjustment.title }}</view>
-          <view class="adjustment-description">{{ planAdjustment.reason }}</view>
-        </view>
+        <view class="route-kicker">{{ routeLabel }}</view>
+        <view class="route-time" wx:if="{{ !routeCompleted }}">当前路线 <text>{{ routeMinutes }}</text> 分钟</view>
+        <view class="route-time" wx:else>今天的路线已完成</view>
+        <view class="route-description">{{ routeDescription }} · {{ focusTitle }}</view>
       </view>
-      <view class="progress-ring" style="background: conic-gradient(#2b9c71 {{ progress }}%, #e9edf4 0);">
-        <view class="progress-inner">
-          <text class="progress-value">{{ progress }}%</text>
-          <text class="progress-label">今日完成</text>
-        </view>
+      <view class="route-progress">
+        <text class="route-progress-value">{{ progress }}%</text>
+        <text class="route-progress-label">已完成</text>
       </view>
     </view>
-    <view class="stat-grid">
-      <view class="stat-box"><text>计划学习</text><text class="stat-strong">{{ plannedMinutes }}分钟</text></view>
-      <view class="stat-box"><text>已经完成</text><text class="stat-strong">{{ completedMinutes }}分钟</text></view>
-      <view class="stat-box"><text>连续打卡</text><text class="stat-strong">{{ streak }}天</text></view>
+
+    <view class="mode-title">今天是什么状态？</view>
+    <view class="mode-selector">
+      <view
+        class="mode-option {{ item.active ? 'mode-option-active' : '' }} {{ item.disabled ? 'mode-option-disabled' : '' }}"
+        wx:for="{{ dayModes }}"
+        wx:key="value"
+        bindtap="selectDayMode"
+        data-mode="{{ item.value }}"
+      >
+        <text class="mode-symbol">{{ item.symbol }}</text>
+        <text class="mode-label">{{ item.label }}</text>
+      </view>
+    </view>
+
+    <view class="main-quest" wx:if="{{ mainTask }}">
+      <view class="quest-topline">
+        <view class="quest-label">主线任务</view>
+        <view class="quest-time">{{ mainTask.minutes }} 分钟</view>
+      </view>
+      <view class="quest-title">{{ mainTask.title }}</view>
+      <view class="quest-resource">{{ mainTask.resource }}</view>
+      <view class="quest-proof">完成后提交：{{ mainTask.evidenceLabel }}</view>
+      <view
+        class="quest-start"
+        hover-class="quest-start-active"
+        bindtap="openTask"
+        data-type="{{ mainTask.executionType }}"
+        data-id="{{ mainTask.id }}"
+        data-title="{{ mainTask.title }}"
+        data-language="{{ mainTask.language }}"
+      >开始主线任务 <text>→</text></view>
+    </view>
+
+    <view class="route-complete" wx:else>
+      <view class="complete-symbol">✓</view>
+      <view class="complete-title">今天的学习成果已经收好</view>
+      <view class="complete-description">可以去复盘页查看证据，也可以展开全部任务重新挑战。</view>
+    </view>
+
+    <view class="next-route" wx:if="{{ nextTasks.length }}">
+      <view class="next-route-title">接下来</view>
+      <view
+        class="next-task"
+        hover-class="next-task-active"
+        wx:for="{{ nextTasks }}"
+        wx:key="id"
+        bindtap="openTask"
+        data-type="{{ item.executionType }}"
+        data-id="{{ item.id }}"
+        data-title="{{ item.title }}"
+        data-language="{{ item.language }}"
+      >
+        <view class="next-index">{{ index + 2 }}</view>
+        <view class="next-copy">
+          <text class="next-title">{{ item.title }}</text>
+          <text class="next-proof">{{ item.evidenceLabel }}</text>
+        </view>
+        <text class="next-minutes">{{ item.minutes }} 分</text>
+      </view>
+      <view class="hidden-route" wx:if="{{ hiddenRouteCount }}">还有 {{ hiddenRouteCount }} 项，按完成情况继续解锁</view>
+    </view>
+
+    <view class="adjustment-note" wx:if="{{ planAdjustment }}">
+      <view class="adjustment-label">系统已根据复盘调整 · {{ planAdjustment.mode }}</view>
+      <view class="adjustment-title">{{ planAdjustment.title }}</view>
+    </view>
+
+    <view class="route-stats">
+      <view><text>{{ completedTaskCount }}/{{ tasks.length }}</text><text>完成任务</text></view>
+      <view><text>{{ completedMinutes }}</text><text>成果分钟</text></view>
+      <view><text>{{ streak }}</text><text>连续天数</text></view>
     </view>
   </view>
 
-  <view class="task-card card">
+  <view class="all-task-entry card" hover-class="all-task-entry-active" bindtap="toggleAllTasks">
+    <view>
+      <view class="all-task-title">全部任务与自定义计划</view>
+      <view class="all-task-caption">查看 {{ tasks.length }} 项完整任务、证据状态和添加入口</view>
+    </view>
+    <view class="all-task-toggle">{{ showAllTasks ? '收起' : '展开' }} {{ showAllTasks ? '↑' : '↓' }}</view>
+  </view>
+
+  <view class="task-card card" wx:if="{{ showAllTasks }}">
     <view class="section-heading">
       <view>
-        <view class="section-title-main">今日任务</view>
+        <view class="section-title-main">全部任务</view>
         <view class="section-caption">{{ tasks.length }} 项任务 · 已完成 {{ completedTaskCount }} 项</view>
       </view>
       <view class="execution-hint">完成需提交学习证据</view>

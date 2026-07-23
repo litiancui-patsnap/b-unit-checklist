@@ -8,6 +8,7 @@ const audioDate = '2026-07-22';
 const audioTask = getPlan(audioDate).tasks.find(item => item.evidenceType === 'audio');
 let capturedPage = null;
 let navigatedBackDelta = 0;
+let switchedUrl = '';
 let toastTitle = '';
 let storageData = {
   config: {
@@ -63,6 +64,9 @@ global.wx = {
   },
   navigateBack({ delta = 1 } = {}) {
     navigatedBackDelta = delta;
+  },
+  switchTab({ url }) {
+    switchedUrl = url;
   }
 };
 
@@ -85,11 +89,17 @@ assert.strictEqual(page.data.evidenceType, 'recall');
 page.onEvidenceInput({ detail: { value: '能闭卷回忆三个重点单词' } });
 page.submitEvidence();
 
-assert.strictEqual(toastTitle, '证据已保存，任务完成');
-assert.strictEqual(navigatedBackDelta, 1);
 assert.strictEqual(storageData.days[date].planner.checked[task.id], true);
 assert.strictEqual(storageData.days[date].planner.evidence[task.id].type, 'recall');
 assert.strictEqual(storageData.days[date].planner.evidence[task.id].text, '能闭卷回忆三个重点单词');
+assert.strictEqual(page.data.showSuccess, true);
+assert.strictEqual(page.data.resultCard.eyebrow, '今日成果 +1');
+assert.strictEqual(page.data.resultCard.completedCount, 1);
+assert.ok(page.data.resultCard.summary.includes('重点单词'));
+assert.ok(page.data.nextTask, 'result card should prepare the next task');
+page.continueNextTask();
+assert.strictEqual(switchedUrl, '/pages/home/home');
+assert.strictEqual(storageData.meta.plannerAutoStartTask.taskId, page.data.nextTask.id);
 
 const audioPage = {
   ...capturedPage,
@@ -108,7 +118,10 @@ assert.strictEqual(audioPage.data.audioDurationText, '24 秒');
 audioPage.submitEvidence();
 assert.strictEqual(storageData.days[audioDate].planner.checked[audioTask.id], true);
 assert.strictEqual(storageData.days[audioDate].planner.evidence[audioTask.id].audioDuration, 24000);
-assert.strictEqual(navigatedBackDelta, 2);
+assert.strictEqual(audioPage.data.showSuccess, true);
+assert.strictEqual(audioPage.data.resultCard.summary, '24 秒录音 · 可以随时回听');
+audioPage.editEvidence();
+assert.strictEqual(audioPage.data.showSuccess, false);
 
 global.setTimeout = originalSetTimeout;
 console.log('evidence page tests passed');

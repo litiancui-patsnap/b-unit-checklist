@@ -1,4 +1,4 @@
-<view class="evidence-page" wx:if="{{ task }}">
+<view class="evidence-page" wx:if="{{ task && !showSuccess }}">
   <view class="task-card">
     <view class="eyebrow">{{ date }} · 学习结果确认</view>
     <view class="task-title">{{ task.title }}</view>
@@ -45,4 +45,51 @@
   </view>
 
   <button class="submit-button" bindtap="submitEvidence" loading="{{ saving }}">{{ hasExistingEvidence ? '更新证据并保持完成' : '提交证据并完成任务' }}</button>
+</view>
+
+<view class="result-page" wx:elif="{{ task && showSuccess }}">
+  <view class="result-glow result-glow-one"></view>
+  <view class="result-glow result-glow-two"></view>
+  <view class="result-card result-{{ resultCard.tone }}">
+    <view class="result-eyebrow">{{ resultCard.eyebrow }}</view>
+    <view class="result-icon">{{ resultCard.icon }}</view>
+    <view class="result-title">{{ resultCard.title }}</view>
+    <view class="result-task">{{ resultCard.taskTitle }}</view>
+
+    <view class="result-evidence">
+      <view class="result-evidence-label">{{ resultCard.evidenceLabel }}</view>
+      <view class="result-summary">{{ resultCard.summary }}</view>
+      <view class="result-play" wx:if="{{ evidenceType === 'audio' }}" bindtap="playRecording">回听本次录音 ▶</view>
+    </view>
+
+    <view class="result-progress-copy">
+      <text>{{ resultCard.dayComplete ? '今日路线全部完成' : '今日路线继续推进' }}</text>
+      <text>{{ resultCard.completedCount }}/{{ resultCard.totalCount }} 项</text>
+    </view>
+    <view class="result-progress-track">
+      <view class="result-progress-fill" style="width: {{ resultCard.progress }}%;"></view>
+    </view>
+
+    <view class="result-stats">
+      <view class="result-stat"><text>{{ resultCard.completedCount }}</text><text>今日完成</text></view>
+      <view class="result-stat"><text>{{ resultCard.weekEvidenceCount }}</text><text>本周成果</text></view>
+      <view class="result-stat"><text>{{ resultCard.streak }}</text><text>连续天数</text></view>
+    </view>
+  </view>
+
+  <view class="next-result-card" wx:if="{{ hasNextTask }}">
+    <view class="next-result-eyebrow">下一项已经准备好</view>
+    <view class="next-result-title">{{ nextTask.title }}</view>
+    <view class="next-result-meta">{{ nextTask.minutes }} 分钟 · {{ nextTask.evidenceLabel }}</view>
+  </view>
+
+  <view class="result-complete-card" wx:else>
+    <view class="result-complete-title">今天没有待完成任务了</view>
+    <view class="result-complete-desc">成果已进入复盘记录，可以安心结束今天的学习。</view>
+  </view>
+
+  <button class="continue-button" wx:if="{{ hasNextTask }}" bindtap="continueNextTask">继续下一项</button>
+  <button class="continue-button" wx:else bindtap="returnToPlan">返回今日路线</button>
+  <button class="return-button" wx:if="{{ hasNextTask }}" bindtap="returnToPlan">先返回今日路线</button>
+  <view class="edit-result-action" bindtap="editEvidence">修改本次学习证据</view>
 </view>

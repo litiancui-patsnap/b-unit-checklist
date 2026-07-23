@@ -11,6 +11,7 @@ const {
   shiftDate,
   updatePlannerCompletion
 } = require('../../utils/planner.js');
+const { DAY_MODES, buildTaskRoute, decorateDayModes } = require('../../utils/taskRoute.js');
 
 const LANGUAGE_OPTIONS = [
   { value: 'jp', label: '日语' },
@@ -37,6 +38,7 @@ function createDayData(config, stored = null) {
       checked: {},
       customTasks: [],
       evidence: {},
+      dayMode: 'normal',
       complete: false,
       ...(stored?.planner || {})
     }
@@ -71,6 +73,19 @@ Page({
     planAdjustment: null,
     personaName: '',
     personaPromise: '',
+    dayMode: 'normal',
+    dayModes: decorateDayModes('normal', true),
+    routeLabel: '今日标准路线',
+    routeDescription: '按计划主线推进',
+    mainTask: null,
+    nextTasks: [],
+    remainingTaskCount: 0,
+    remainingMinutes: 0,
+    routeMinutes: 0,
+    hiddenRouteCount: 0,
+    routeCompleted: false,
+    canSelectDayMode: true,
+    showAllTasks: false,
     customTitle: '',
     languageOptions: LANGUAGE_OPTIONS,
     languageIndex: 0,
@@ -86,8 +101,11 @@ Page({
       return;
     }
     this.skipNextShowReload = true;
-    this.setData({ selectedDate: this.consumePlannerPreviewDate() || getToday() });
-    this.loadPlan();
+    const autoStartTask = this.consumePlannerAutoStartTask();
+    this.pendingAutoStartTask = autoStartTask;
+    this.setData({
+      selectedDate: autoStartTask?.date || this.consumePlannerPreviewDate() || getToday()
+    }, () => this.loadPlan());
   },
 
   onShow() {
@@ -95,13 +113,18 @@ Page({
       this.skipNextShowReload = false;
       return;
     }
+    const autoStartTask = this.consumePlannerAutoStartTask();
     const previewDate = this.consumePlannerPreviewDate();
+    if (autoStartTask) {
+      this.pendingAutoStartTask = autoStartTask;
+      this.setData({ selectedDate: autoStartTask.date }, () => this.loadPlan());
+      return;
+    }
     if (previewDate) {
-      this.setData({ selectedDate: previewDate });
+      this.setData({ selectedDate: previewDate }, () => this.loadPlan());
+      return;
     }
-    if (this.data.selectedDate) {
-      this.loadPlan();
-    }
+    if (this.data.selectedDate) this.loadPlan();
   },
 
   consumePlannerPreviewDate() {
@@ -111,6 +134,24 @@ Page({
     delete meta.plannerPreviewDate;
     setMeta(meta);
     return previewDate;
+  },
+
+  consumePlannerAutoStartTask() {
+    const meta = getMeta();
+    const autoStartTask = meta.plannerAutoStartTask;
+    if (!autoStartTask?.taskId || !autoStartTask?.date) return null;
+    delete meta.plannerAutoStartTask;
+    setMeta(meta);
+    return autoStartTask;
+  },
+
+  openPendingAutoStartTask() {
+    const autoStartTask = this.pendingAutoStartTask;
+    this.pendingAutoStartTask = null;
+    if (!autoStartTask || autoStartTask.date !== this.data.selectedDate || this.data.selectedDate !== getToday()) return;
+    const task = this.data.tasks.find(item => item.id === autoStartTask.taskId);
+    if (!task || task.checked) return;
+    this.openTask({ currentTarget: { dataset: { id: task.id } } });
   },
 
   loadPlan() {
@@ -153,6 +194,9 @@ Page({
       name,
       description: getResourceDescription(name)
     }));
+    const dayMode = dayData.planner.dayMode || 'normal';
+    const canSelectDayMode = selectedDate === today;
+    const route = buildTaskRoute(tasks, dayMode);
 
     this.currentDayData = dayData;
     this.currentPlanAdjustments = adjustments;
@@ -177,12 +221,16 @@ Page({
       planAdjustment: plan.adjustment,
       personaName: plan.persona.name,
       personaPromise: plan.persona.promise,
+      dayMode,
+      dayModes: decorateDayModes(dayMode, canSelectDayMode),
+      canSelectDayMode,
+      ...route,
       isLoading: false
-    });
+    }, () => this.openPendingAutoStartTask());
   },
 
   changeDate(offset) {
-    this.setData({ selectedDate: shiftDate(this.data.selectedDate, offset) });
+    this.setData({ selectedDate: shiftDate(this.data.selectedDate, offset), showAllTasks: false });
     this.loadPlan();
   },
 
@@ -195,13 +243,31 @@ Page({
   },
 
   goToday() {
-    this.setData({ selectedDate: getToday() });
+    this.setData({ selectedDate: getToday(), showAllTasks: false });
     this.loadPlan();
   },
 
   selectWeekDay(e) {
-    this.setData({ selectedDate: e.currentTarget.dataset.date });
+    this.setData({ selectedDate: e.currentTarget.dataset.date, showAllTasks: false });
     this.loadPlan();
+  },
+
+  selectDayMode(e) {
+    if (!this.data.canSelectDayMode) {
+      wx.showToast({ title: '只能调整今天的学习状态', icon: 'none' });
+      return;
+    }
+    const dayMode = e.currentTarget.dataset.mode;
+    if (!DAY_MODES.some(item => item.value === dayMode) || dayMode === this.data.dayMode) return;
+    const dayData = this.currentDayData || createDayData(getConfig(), getDayData(this.data.selectedDate));
+    dayData.planner.dayMode = dayMode;
+    setDayData(this.data.selectedDate, dayData);
+    this.currentDayData = dayData;
+    this.loadPlan();
+  },
+
+  toggleAllTasks() {
+    this.setData({ showAllTasks: !this.data.showAllTasks });
   },
 
   toggleTask(e) {

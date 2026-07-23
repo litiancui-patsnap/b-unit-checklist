@@ -42,8 +42,9 @@ function createPage(data = {}) {
       ...capturedPage.data,
       ...data
     },
-    setData(patch) {
+    setData(patch, callback) {
       Object.assign(this.data, patch);
+      if (callback) callback();
     }
   };
 }
@@ -92,6 +93,27 @@ todayPage.openTask({
 });
 assert.ok(navigatedUrl.startsWith('/pages/study/study?taskType=speak'));
 assert.ok(storageData.days[today], 'opening an execution task should persist its planner day');
+
+const routePage = createPage({ selectedDate: today });
+routePage.loadPlan();
+assert.strictEqual(routePage.data.dayMode, 'normal');
+assert.strictEqual(routePage.data.mainTask.id, routePage.data.tasks[0].id);
+assert.strictEqual(routePage.data.nextTasks.length, 2);
+assert.strictEqual(routePage.data.showAllTasks, false);
+routePage.selectDayMode({ currentTarget: { dataset: { mode: 'focused' } } });
+assert.strictEqual(storageData.days[today].planner.dayMode, 'focused');
+assert.strictEqual(routePage.data.dayMode, 'focused');
+assert.ok(['audio', 'sentence', 'diary'].includes(routePage.data.mainTask.evidenceType), 'focused mode should prioritize visible output');
+routePage.toggleAllTasks();
+assert.strictEqual(routePage.data.showAllTasks, true);
+
+const autoTask = routePage.data.tasks.find(item => item.language === 'en' && !item.checked);
+storageData.meta.plannerAutoStartTask = { date: today, taskId: autoTask.id };
+navigatedUrl = '';
+const autoStartPage = createPage({ selectedDate: today });
+autoStartPage.onShow();
+assert.strictEqual(storageData.meta.plannerAutoStartTask, undefined, 'auto-start task should be consumed once');
+assert.ok(navigatedUrl.includes(encodeURIComponent(autoTask.id)), 'home should automatically enter the prepared next task');
 
 const evidencePage = createPage({
   selectedDate: today,

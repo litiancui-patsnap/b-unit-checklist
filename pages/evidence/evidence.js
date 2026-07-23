@@ -1,5 +1,22 @@
-const { getConfig, getDayData, getMeta, setDayData } = require('../../utils/storage.js');
-const { addTaskEvidence, getPlan, updatePlannerCompletion } = require('../../utils/planner.js');
+const { getAllDays, getConfig, getDayData, getMeta, setDayData, setMeta } = require('../../utils/storage.js');
+const {
+  addTaskEvidence,
+  calculateStreak,
+  getPlan,
+  getWeekStart,
+  isTaskComplete,
+  shiftDate,
+  updatePlannerCompletion
+} = require('../../utils/planner.js');
+const { buildTaskRoute } = require('../../utils/taskRoute.js');
+
+const RESULT_PRESENTATIONS = {
+  audio: { icon: '🎙', title: '完成一次可回听输出', tone: 'audio' },
+  sentence: { icon: '✍', title: '留下自己的表达', tone: 'sentence' },
+  diary: { icon: '▤', title: '保存一页学习日记', tone: 'diary' },
+  recall: { icon: '◈', title: '完成一次闭卷回忆', tone: 'recall' },
+  retell: { icon: '◌', title: '完成一次脱稿复述', tone: 'retell' }
+};
 
 function createPlannerState(dayData = {}) {
   return {
@@ -19,6 +36,20 @@ function formatDuration(duration = 0) {
   return `${seconds} 秒`;
 }
 
+function getEvidenceSummary(evidence = {}) {
+  if (evidence.type === 'audio') {
+    return `${formatDuration(evidence.audioDuration)}录音 · 可以随时回听`;
+  }
+  const text = String(evidence.text || '').replace(/\s+/g, ' ').trim();
+  return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+}
+
+function countWeekEvidence(allDays = {}, dateString) {
+  const weekStart = getWeekStart(dateString);
+  return Array.from({ length: 7 }, (_, index) => shiftDate(weekStart, index))
+    .reduce((sum, date) => sum + Object.keys(allDays[date]?.planner?.evidence || {}).length, 0);
+}
+
 Page({
   data: {
     date: '',
@@ -35,7 +66,11 @@ Page({
     hasExistingEvidence: false,
     returnDelta: 1,
     canRecord: true,
-    saving: false
+    saving: false,
+    showSuccess: false,
+    resultCard: null,
+    nextTask: null,
+    hasNextTask: false
   },
 
   onLoad(options = {}) {
@@ -84,6 +119,15 @@ Page({
       this.audioContext.destroy();
       this.audioContext = null;
     }
+  },
+
+  setResultNavigation(active) {
+    if (!wx.setNavigationBarColor) return;
+    wx.setNavigationBarColor({
+      frontColor: active ? '#ffffff' : '#000000',
+      backgroundColor: active ? '#111c31' : '#ffffff',
+      animation: { duration: 220, timingFunc: 'easeIn' }
+    });
   },
 
   initRecorder() {
@@ -170,6 +214,42 @@ Page({
     this.setData({ audioPath: '', audioDuration: 0, audioDurationText: '' });
   },
 
+  buildResultState(dayData, evidence, wasExisting) {
+    const { date } = this.data;
+    const config = this.config;
+    const planTasks = getPlan(date, this.adjustments, config.studyPersona || 'dual_worker').tasks;
+    const tasks = [...planTasks, ...(dayData.planner.customTasks || [])].map(rawTask => {
+      const task = addTaskEvidence(rawTask);
+      return {
+        ...task,
+        checked: isTaskComplete(task, dayData, date)
+      };
+    });
+    const route = buildTaskRoute(tasks, dayData.planner.dayMode || 'normal');
+    const completedCount = tasks.filter(task => task.checked).length;
+    const allDays = {
+      ...getAllDays(),
+      [date]: dayData
+    };
+    const presentation = RESULT_PRESENTATIONS[evidence.type] || RESULT_PRESENTATIONS.retell;
+    return {
+      nextTask: route.mainTask,
+      resultCard: {
+        ...presentation,
+        eyebrow: wasExisting ? '学习成果已更新' : '今日成果 +1',
+        taskTitle: this.data.task.title,
+        evidenceLabel: this.data.evidenceLabel,
+        summary: getEvidenceSummary(evidence),
+        completedCount,
+        totalCount: tasks.length,
+        progress: tasks.length ? Math.round(completedCount / tasks.length * 100) : 0,
+        weekEvidenceCount: countWeekEvidence(allDays, date),
+        streak: calculateStreak(allDays, date),
+        dayComplete: Boolean(dayData.planner.complete)
+      }
+    };
+  },
+
   submitEvidence() {
     if (this.data.saving) return;
     const isAudio = this.data.evidenceType === 'audio';
@@ -186,7 +266,8 @@ Page({
     this.setData({ saving: true });
     const { taskId, task, date } = this.data;
     const dayData = createPlannerState(this.dayData);
-    dayData.planner.evidence[taskId] = {
+    const wasExisting = Boolean(dayData.planner.evidence[taskId]?.createdAt);
+    const evidence = {
       taskId,
       taskTitle: task.title,
       type: this.data.evidenceType,
@@ -196,12 +277,50 @@ Page({
       audioDuration: this.data.audioDuration,
       createdAt: Date.now()
     };
+    dayData.planner.evidence[taskId] = evidence;
     dayData.planner.checked[taskId] = true;
     updatePlannerCompletion(dayData, date, this.adjustments, this.config.studyPersona || 'dual_worker');
     setDayData(date, dayData);
     this.dayData = dayData;
-    this.setData({ hasExistingEvidence: true });
-    wx.showToast({ title: '证据已保存，任务完成', icon: 'success' });
-    setTimeout(() => wx.navigateBack({ delta: this.data.returnDelta }), 500);
+    const resultState = this.buildResultState(dayData, evidence, wasExisting);
+    this.setData({
+      hasExistingEvidence: true,
+      saving: false,
+      showSuccess: true,
+      resultCard: resultState.resultCard,
+      nextTask: resultState.nextTask,
+      hasNextTask: Boolean(resultState.nextTask)
+    });
+    this.setResultNavigation(true);
+    if (wx.vibrateShort) wx.vibrateShort({ type: 'light' });
+  },
+
+  editEvidence() {
+    this.setData({ showSuccess: false });
+    this.setResultNavigation(false);
+  },
+
+  returnToPlan() {
+    if (wx.switchTab) {
+      wx.switchTab({ url: '/pages/home/home' });
+      return;
+    }
+    wx.navigateBack({ delta: this.data.returnDelta });
+  },
+
+  continueNextTask() {
+    const nextTask = this.data.nextTask;
+    if (!nextTask) {
+      this.returnToPlan();
+      return;
+    }
+    const meta = getMeta();
+    meta.plannerAutoStartTask = {
+      date: this.data.date,
+      taskId: nextTask.id,
+      createdAt: Date.now()
+    };
+    setMeta(meta);
+    this.returnToPlan();
   }
 });
